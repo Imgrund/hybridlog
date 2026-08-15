@@ -3,12 +3,15 @@
 [![Tests](https://github.com/Imgrund/hybridlog/actions/workflows/tests.yml/badge.svg)](https://github.com/Imgrund/hybridlog/actions/workflows/tests.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Release](https://img.shields.io/github/v/release/Imgrund/hybridlog?display_name=tag&label=release)](https://github.com/Imgrund/hybridlog/releases)
+[![MCP registry](https://img.shields.io/badge/MCP%20registry-io.github.Imgrund%2Fhybridlog-0a7ea4)](https://registry.modelcontextprotocol.io/v0/servers?search=io.github.Imgrund/hybridlog)
 
-Training and recovery cockpit for anyone who trains with a Garmin. It
-reads what the watch records, computes the models the watch does not
-(training load, muscle freshness, readiness in context), and gives a
-language model a way in, so the things Garmin cannot measure can be
-dictated into the chat instead of typed into a form.
+Self-hosted MCP server on your own Garmin data. It mirrors what the watch
+records into a database you control, computes the models the watch does
+not (training load, muscle freshness, readiness in context), and hands
+all of it to a language model over stdio or HTTP, so the things Garmin
+cannot measure can be dictated into the chat instead of typed into a
+form. A dashboard comes with it: the body map, the training load, and the
+login the connector authenticates against.
 
 Running, lifting or both on the same day: the models do not care which.
 Sessions that alternate running with station work get a lap-by-lap
@@ -50,13 +53,49 @@ browser language unless the profile says otherwise.</sub>
 
 ## What it is
 
+- **MCP server**: twelve tools and one prompt over `laravel/mcp`, in two
+  transports. Local (stdio) for Claude Code and Claude Desktop, hosted
+  (streamable HTTP with OAuth 2.1, PKCE and dynamic client registration)
+  for claude.ai, ChatGPT, LM Studio and anything else that speaks it.
+- **Dashboard**: Laravel + Alpine + Chart.js. It draws the body map and
+  the training load, and it is also the login the connector authenticates
+  against and the place where you set what the chat may see.
 - **Fetcher**: Python (`fetcher/`), pulls daily metrics and activities via
   [python-garminconnect](https://github.com/cyberjunky/python-garminconnect)
-  into one athlete's schema of a PostgreSQL database.
-- **Dashboard**: Laravel + Alpine + Chart.js, reading that schema through a
-  connection that may only read it, and only that athlete's.
-- **MCP server**: the same data in a chat, over `laravel/mcp`. Local
-  (stdio) or hosted (HTTP + OAuth).
+  into one athlete's schema of a PostgreSQL database, which both of the
+  above read through a connection that may only read it, and only that
+  athlete's.
+
+There is no hosted instance. It runs on hardware you control, which is
+the point: it is a health record.
+
+## The tools
+
+Twelve tools and one prompt. The right-hand column is the switch at
+`/connect` that gates each one; everything is on by default.
+
+| Tool | What it answers | Needs |
+| --- | --- | --- |
+| `get-health-summary-tool` | the current picture in one call: readiness, sleep, load, data freshness | Read health data |
+| `get-insights-tool` | the app's own verdict per body system, with the recommendation and the early illness pattern | Read health data, Read body metrics |
+| `get-muscle-map-tool` | per-zone freshness, weekly volume per zone, what to train today | Read health data |
+| `get-training-load-tool` | CTL/ATL/TSB, the acute:chronic ratio, the weekly stimulus split | Read health data |
+| `get-strength-progress-tool` | week by week per exercise category: reps, tonnage where it was recorded, top weights, what has not moved | Read health data |
+| `get-race-splits-tool` | one session lap by lap: running vs. station work, pace per lap, how far the pace drifted | Read health data |
+| `describe-schema-tool` | the mirror's tables and columns, so the model can write its own query | Read health data, Read body metrics |
+| `query-health-data-tool` | everything else, as one read-only SELECT with a 500-row cap | Read health data, Read body metrics |
+| `refresh-data-tool` | starts the same fetch as the header button and waits for it | Start a fetch |
+| `log-symptom-tool` | a strain mentioned in passing, as a marker on the body map | Log how you feel |
+| `delete-symptom-tool` | takes one off again once it has healed | Log how you feel |
+| `give-feedback-tool` | a correction that becomes a standing guideline for the connector | Process feedback |
+| `weekly-report` (prompt) | drives the Sunday review; the report is the conversation's answer and is stored nowhere | Read health data |
+
+Reading is the whole of it, with one documented exception. Symptoms are
+the only thing the chat may write, and they go to the app's own schema,
+never into the Garmin mirror. Free-form SQL runs through
+`app/Garmin/ReadOnlyGarminQuery`: a single SELECT or WITH, a keyword
+blocklist, a read-only transaction, a row cap, on a connection switched
+into a role that holds SELECT on one athlete's schema and nothing else.
 
 ## Quickstart (Docker, demo data, no Garmin account)
 
@@ -99,32 +138,12 @@ mirror, and sees none of anybody else's.
 shared account, everything that would reach out of it closed (the Garmin
 sign-in above all), and `php artisan demo:reset` putting it back nightly.
 
-## Setup with your own Garmin account
-
-Sign in under *Garmin* in the account menu, or at `/connect/garmin`:
-email, password, and the MFA code if Garmin asks for one. What is stored
-is an OAuth token pair, never the password. The sign-in runs on a queue
-worker, so one has to be up.
-
-A first sign-in fills the mirror by itself: a ninety-day backfill on the
-queue, roughly a quarter of an hour, with the page filling in as the
-history lands. Ninety days is about the minimum for the models to say
-anything, since the HRV baseline needs three weeks of nights and the load
-ratios a rolling six weeks. From then on the scheduler fetches three
-times a day and the *Fetch from Garmin* button fetches on demand.
-
-Every command works on one athlete (`--tenant <user id>`, the owner where
-left out). Details, backfills and the manual login are in
-[docs/install.md](docs/install.md); how to record so the data is worth
-reading is in [docs/recording.md](docs/recording.md).
-
 ## Connect an AI
 
-The dashboard answers two questions, the body map and the training load.
-Everything past those two happens in a chat: how this week stands against
-the one before, whether today is a rest day, what a niggle means for
-tomorrow. An MCP server serves that chat from the same mirror the page
-reads.
+The server reads the same mirror the dashboard draws from, so a chat and
+the page never disagree. What the page cannot do is answer a question it
+was not built for: how this week stands against the one before, whether
+today is a rest day, what a niggle means for tomorrow.
 
 > [!IMPORTANT]
 > This hands a language model your health record. It reads through a role
@@ -144,31 +163,8 @@ the dashboard's own login, so no client ever sees a password and
 can skip the deployment entirely and talk to the repository over stdio.
 [docs/connect-ai.md](docs/connect-ai.md) has the steps per client.
 
-Twelve tools and one prompt. The right-hand column is the switch at
-`/connect` that gates each one; everything is on by default.
-
-| Tool | What it answers | Needs |
-| --- | --- | --- |
-| `get-health-summary-tool` | the current picture in one call: readiness, sleep, load, data freshness | Read health data |
-| `get-insights-tool` | the app's own verdict per body system, with the recommendation and the early illness pattern | Read health data, Read body metrics |
-| `get-muscle-map-tool` | per-zone freshness, weekly volume per zone, what to train today | Read health data |
-| `get-training-load-tool` | CTL/ATL/TSB, the acute:chronic ratio, the weekly stimulus split | Read health data |
-| `get-strength-progress-tool` | week by week per exercise category: reps, tonnage where it was recorded, top weights, what has not moved | Read health data |
-| `get-race-splits-tool` | one session lap by lap: running vs. station work, pace per lap, how far the pace drifted | Read health data |
-| `describe-schema-tool` | the mirror's tables and columns, so the model can write its own query | Read health data, Read body metrics |
-| `query-health-data-tool` | everything else, as one read-only SELECT with a 500-row cap | Read health data, Read body metrics |
-| `refresh-data-tool` | starts the same fetch as the header button and waits for it | Start a fetch |
-| `log-symptom-tool` | a strain mentioned in passing, as a marker on the body map | Log how you feel |
-| `delete-symptom-tool` | takes one off again once it has healed | Log how you feel |
-| `give-feedback-tool` | a correction that becomes a standing guideline for the connector | Process feedback |
-| `weekly-report` (prompt) | drives the Sunday review; the report is the conversation's answer and is stored nowhere | Read health data |
-
-Reading is the whole of it, with one documented exception. Symptoms are
-the only thing the chat may write, and they go to the app's own schema,
-never into the Garmin mirror. Free-form SQL runs through
-`app/Garmin/ReadOnlyGarminQuery`: a single SELECT or WITH, a keyword
-blocklist, a read-only transaction, a row cap, on a connection switched
-into a role that holds SELECT on one athlete's schema and nothing else.
+Whichever way it connects, it gets [the same twelve tools](#the-tools) and
+the same switches.
 
 Things worth asking, once it is connected:
 
@@ -182,6 +178,25 @@ Things worth asking, once it is connected:
 > station work?
 >
 > My left knee hurt on the box jumps.
+
+## Setup with your own Garmin account
+
+Sign in under *Garmin* in the account menu, or at `/connect/garmin`:
+email, password, and the MFA code if Garmin asks for one. What is stored
+is an OAuth token pair, never the password. The sign-in runs on a queue
+worker, so one has to be up.
+
+A first sign-in fills the mirror by itself: a ninety-day backfill on the
+queue, roughly a quarter of an hour, with the page filling in as the
+history lands. Ninety days is about the minimum for the models to say
+anything, since the HRV baseline needs three weeks of nights and the load
+ratios a rolling six weeks. From then on the scheduler fetches three
+times a day and the *Fetch from Garmin* button fetches on demand.
+
+Every command works on one athlete (`--tenant <user id>`, the owner where
+left out). Details, backfills and the manual login are in
+[docs/install.md](docs/install.md); how to record so the data is worth
+reading is in [docs/recording.md](docs/recording.md).
 
 ## Documentation
 

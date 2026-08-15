@@ -52,13 +52,15 @@ FROM dunglas/frankenphp:php8.4
 # server.json in this repository are the same project. A server that ships as
 # a container is only accepted once the image itself names the server it
 # claims to be, and the name has to match server.json character for character.
+# Character for character includes the capital I: the namespace follows the
+# GitHub account name, and the registry compares the two case-sensitively.
 # Drop this line and the next release stops being publishable.
-LABEL io.modelcontextprotocol.server.name="io.github.imgrund/hybridlog"
+LABEL io.modelcontextprotocol.server.name="io.github.Imgrund/hybridlog"
 
 # The usual OCI set, so that an image someone pulled a year from now still
 # says where it came from and under which licence it may be used.
 LABEL org.opencontainers.image.source="https://github.com/Imgrund/hybridlog" \
-      org.opencontainers.image.description="Training and recovery cockpit for Garmin hybrid athletes (CrossFit + HYROX)" \
+      org.opencontainers.image.description="Self-hosted MCP server on your own Garmin data, with the dashboard it authenticates against" \
       org.opencontainers.image.licenses="MIT"
 
 # pdo_pgsql to reach the database, pcntl so the queue worker can enforce its
