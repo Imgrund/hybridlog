@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-08-15
+
+### Changed
+
+- The README leads with the MCP server rather than the dashboard, and the
+  tool table moved out of *Connect an AI* into a section of its own, right
+  behind *What it is*. The dashboard keeps its place in the description:
+  it draws the body map and the load view, and it is the login the
+  connector authenticates against.
+
+### Fixed
+
+- The server name in `server.json` and in the image's
+  `io.modelcontextprotocol.server.name` label is `io.github.Imgrund/hybridlog`,
+  with the capital I of the GitHub account. The registry compares the two
+  case-sensitively and refused the lowercase spelling, so 0.1.0 could not
+  be published there.
+
 ## [0.1.0] - 2026-08-15
 
 First public release. The list below is what an installation does, not the
@@ -127,5 +145,6 @@ history that led to it.
 - English interface with a German translation, following the browser language
   unless the profile says otherwise.
 
-[Unreleased]: https://github.com/Imgrund/hybridlog/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/Imgrund/hybridlog/compare/v0.1.1...HEAD
+[0.1.1]: https://github.com/Imgrund/hybridlog/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/Imgrund/hybridlog/releases/tag/v0.1.0

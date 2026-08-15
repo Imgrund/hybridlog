@@ -1,8 +1,11 @@
 # Connecting an AI
 
-The [README](../README.md) has the address and the shortest path per
-client. This is the long version: every client's steps, what the server
-exposes, and what to watch on a host that is reachable from outside.
+hybridlog is an MCP server on your own Garmin mirror, in two transports:
+stdio for a client on this machine, streamable HTTP with OAuth for one
+that reaches it over the network. The [README](../README.md) has the
+address and the shortest path per client. This is the long version: every
+client's steps, what the server exposes, and what to watch on a host that
+is reachable from outside.
 
 ## Hosted: claude.ai, ChatGPT, anything that speaks HTTP
 
@@ -135,7 +138,7 @@ code in memory, so restart the client after changing a tool.
 ## What it can do
 
 Twelve tools and one prompt, each gated by a switch at `/connect`: the
-table is on the [README](../README.md#connect-an-ai).
+table is on the [README](../README.md#the-tools).
 
 Two details that belong here rather than there. The summary and the
 muscle map carry open symptoms along with their numbers, and *Log how you
