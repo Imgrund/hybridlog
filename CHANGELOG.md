@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.2] - 2026-08-16
+
+### Fixed
+
+- The release workflow set `io.modelcontextprotocol.server.name` itself, in
+  the old spelling, and what it sets wins over the Dockerfile's `LABEL`. So
+  0.1.1 shipped an image that still carried the lowercase name and the
+  registry refused it a second time. All four places that name the server
+  now agree, and `ServerManifestTest` fails the suite when they drift:
+  nothing else notices, because the image builds and pushes either way and
+  the refusal only arrives at publishing time, by which point the label is
+  baked into a released image.
+
 ## [0.1.1] - 2026-08-15
 
 ### Changed
@@ -145,6 +158,7 @@ history that led to it.
 - English interface with a German translation, following the browser language
   unless the profile says otherwise.
 
-[Unreleased]: https://github.com/Imgrund/hybridlog/compare/v0.1.1...HEAD
+[Unreleased]: https://github.com/Imgrund/hybridlog/compare/v0.1.2...HEAD
+[0.1.2]: https://github.com/Imgrund/hybridlog/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/Imgrund/hybridlog/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/Imgrund/hybridlog/releases/tag/v0.1.0
