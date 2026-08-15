@@ -69,10 +69,17 @@ jobs:
           # already writes it into each platform's config; repeating it
           # here puts it on the multi-arch index as well, so the check
           # finds it whichever of the two it reads.
+          #
+          # What is set here wins over the Dockerfile's LABEL, so the two
+          # spellings have to agree, capital I included: the namespace
+          # follows the GitHub account and the registry compares it
+          # case-sensitively. ServerManifestTest holds all four places to
+          # the same string, because the last time they drifted the build
+          # was green and the publish was refused.
           labels: |
-            io.modelcontextprotocol.server.name=io.github.imgrund/hybridlog
+            io.modelcontextprotocol.server.name=io.github.Imgrund/hybridlog
           annotations: |
-            io.modelcontextprotocol.server.name=io.github.imgrund/hybridlog
+            io.modelcontextprotocol.server.name=io.github.Imgrund/hybridlog
 
       - uses: docker/build-push-action@v7
         with:
