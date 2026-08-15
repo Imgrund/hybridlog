@@ -1,0 +1,39 @@
+# Railway, the background service: what actually runs the fetcher, and what
+# starts it on time. Two processes in one container, see docker/work.sh for
+# why they share one and what happens when either of them ends.
+#
+# The refresh button and the MCP refresh tool both dispatch a job rather
+# than fetching in the request. Without this service those jobs are enqueued
+# and nothing picks them up, which looks like a refresh button that does
+# nothing at all.
+#
+# Point a second service at this file under Settings -> Config-as-code,
+# with the absolute path /railway.worker.toml. There is no environment
+# variable and no CLI flag for it, so it is either that click or the API:
+#
+#   railway api 'mutation($s:String!,$e:String,$i:ServiceInstanceUpdateInput!){
+#       serviceInstanceUpdate(serviceId:$s,environmentId:$e,input:$i)}' \
+#     --variables '{"s":"<service-id>","e":"<environment-id>",
+#                   "i":{"railwayConfigFile":"railway.worker.toml"}}'
+#
+# Then deploy, do not redeploy: `railway redeploy` repeats the manifest the
+# last deployment was built with and would keep the old start command.
+# `serviceInstanceDeployV2` with the commit sha reads this file afresh.
+#
+# The service needs the same variables as the web one (see railway.toml).
+# No public domain, it serves nothing.
+
+[build]
+builder = "DOCKERFILE"
+
+[deploy]
+startCommand = "/app/docker/work.sh"
+
+# No preDeployCommand: the web service owns that, see railway.toml. No
+# healthcheckPath either, since this service answers no HTTP.
+#
+# ALWAYS rather than ON_FAILURE, because both processes also exit cleanly:
+# queue:work on `queue:restart` and when it decides it has run long enough,
+# schedule:work on a SIGTERM it was not sent by a deploy. Those are exit
+# code 0 and still have to come back up.
+restartPolicyType = "ALWAYS"

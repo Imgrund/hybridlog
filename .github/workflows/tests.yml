@@ -1,0 +1,94 @@
+# The suite the way a laptop runs it: real PostgreSQL (the tests assert
+# against Postgres behaviour, see phpunit.xml) and built assets.
+name: Tests
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    # phpunit.xml empties the per-connection credentials and lets libpq
+    # decide, which in CI means: whatever PGUSER/PGPASSWORD say. The DB_*
+    # pair covers the app connection, the PG* pair the garmin mirror.
+    env:
+      DB_HOST: 127.0.0.1
+      DB_USERNAME: postgres
+      DB_PASSWORD: postgres
+      PGUSER: postgres
+      PGPASSWORD: postgres
+
+    steps:
+      - uses: actions/checkout@v7
+
+      # A throwaway key instead of a .env: two config tests prove that
+      # GARMIN_* variables fall through to putenv when unset, and a .env
+      # copied from .env.example would pin those in $_ENV first. Minted
+      # per run, so the workflow file never carries a key-shaped literal.
+      - run: echo "APP_KEY=base64:$(openssl rand -base64 32)" >> "$GITHUB_ENV"
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: pdo_pgsql, pgsql
+          coverage: none
+
+      # The same major the Dockerfile's assets stage builds on. Two
+      # different versions here would mean CI green on assets nobody ships.
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 26
+          cache: npm
+
+      - run: composer install --no-interaction --prefer-dist
+
+      - run: npm ci --no-audit --no-fund
+
+      - run: npm run build
+
+      - run: createdb -h 127.0.0.1 garmin_test
+
+      # The OAuth key pair auth:api verifies tokens against. A laptop has
+      # one from setting Passport up; a runner starts bare, and the MCP
+      # transport tests hit the real guard rather than faking it away.
+      - run: php artisan passport:keys
+
+      - run: vendor/bin/pint --test
+
+      - run: php artisan test
+
+  # The fetcher has no suite: it is only honest against a live Garmin
+  # account, and running one in CI would mean putting real credentials
+  # here. Ruff is what is left, and it catches the class of mistake that
+  # would otherwise surface at 4am in a cron log. Rules live in
+  # ruff.toml. `ruff format` is deliberately not run: it would rewrite
+  # roughly 1400 lines of working code for quote style alone.
+  python:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+
+      - run: pip install ruff
+
+      - run: ruff check fetcher/ scripts/

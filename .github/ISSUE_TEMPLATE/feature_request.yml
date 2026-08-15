@@ -1,0 +1,38 @@
+name: Feature request
+description: Something the project should do and does not.
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Some things are settled rather than missing: a second data source,
+        multi-user, Apple Health, a hosted service, medical claims. See
+        [Deliberately out of scope](https://github.com/Imgrund/hybridlog/blob/main/CONTRIBUTING.md#deliberately-out-of-scope)
+        before writing, and the list above it for what tends to be
+        accepted.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: The problem
+      description: >-
+        What you were trying to find out or do, and where the project left
+        you. Describe this without naming a solution.
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: What you have in mind
+      description: >-
+        Optional. A sketch is enough. For a model or a metric, say what it
+        should be calibrated against.
+
+  - type: checkboxes
+    id: scope
+    attributes:
+      label: Before submitting
+      options:
+        - label: I have read the out-of-scope list and this is not on it.
+          required: true

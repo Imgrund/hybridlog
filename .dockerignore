@@ -1,0 +1,64 @@
+# What never belongs in the image, and what the build produces itself.
+#
+# Note the shape of the storage/ rules below: they exclude files, never a
+# directory. Those directories ship as empty folders holding nothing but a
+# .gitignore, and excluding a folder outright would leave it out of the image
+# altogether, which the framework notices the first time it wants to write a
+# compiled view.
+
+.git
+.gitattributes
+.github
+.DS_Store
+.idea
+.vscode
+
+# Credentials and whatever the running installation accumulated.
+.env
+.env.*
+!.env.example
+data
+storage/logs/*.log
+.phpunit.result.cache
+
+# What only this checkout knows: the maintainer's journal, local signing
+# keys, scratch databases, Garmin tokens and the body-model build's
+# intermediates. CI builds from a clean checkout and never sees any of
+# them; an image built from a working copy must not bake them in either.
+TODO.md
+composer-integrity.lock
+storage/*.key
+database/*.sqlite*
+fetcher/.tokens
+scripts/body-model/stl
+scripts/body-model/parts_list.txt
+scripts/body-model/stl_list.tsv
+scripts/body-model/selection.tsv
+scripts/body-model/*.glb
+
+# The package manifest a local `composer install` left behind. It lists the
+# dev-only providers, the image installs without them, and the first artisan
+# command then dies on a provider class that is not there. Left out, the
+# build writes its own from what it actually installed.
+bootstrap/cache/*.php
+
+# Blade output from whenever this machine last rendered a page. Nothing here
+# needs it, and resources/css/app.css scans it (a Laravel default), so leaving
+# it in would let the stylesheet differ between a build here and a build on a
+# platform, where the folder is empty. What it contributes is the class names
+# of Laravel's own error pages, which arrive with their own stylesheet.
+storage/framework/views/*.php
+
+# Built in their own stages, and a stale copy would win over the fresh one.
+vendor
+node_modules
+public/build
+public/hot
+
+# The local virtualenv from the README; the image installs its own, and a
+# macOS one would not run in a Linux container anyway.
+fetcher/venv
+**/__pycache__
+
+# Not part of a running installation.
+tests

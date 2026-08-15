@@ -1,0 +1,136 @@
+# The whole installation on one machine: a database, the dashboard, a queue
+# worker that runs the fetches and a scheduler that starts them on time.
+#
+#   cp .env.example .env
+#   docker compose up -d
+#
+# That fetches the published image rather than building one, so the first
+# start is a download and not a compile on whatever machine this is.
+# Building the tree in front of you is `docker compose up -d --build`, and
+# moving an installation on to a newer published image is
+# `docker compose pull` before the up.
+#
+# There is no sign-up page, so create the account you log in with, then log
+# in to Garmin once so the fetcher has a session:
+#
+#   docker compose exec app php artisan app:create-user you@example.com
+#   docker compose exec app /opt/fetcher/bin/python fetcher/login.py
+#   docker compose exec app php artisan garmin:fetch --backfill=2026-01-01
+#
+# Then http://localhost:8080.
+#
+# .env is mounted rather than baked in, so the key generated on the first
+# boot is still there after a rebuild. Everything below it is set as a real
+# environment variable and wins over the file, because Laravel's dotenv
+# never overwrites a variable the environment already carries.
+
+x-app: &app
+  # The published image, and one name for all four services below, so they
+  # share a single copy instead of each holding the same build under a tag
+  # of its own.
+  image: ghcr.io/imgrund/hybridlog:latest
+  build: .
+  # Both, because the source has to stay buildable for anyone changing it.
+  # Which of the two an `up` reaches for is not a question every Compose
+  # version answers the same way, so it is stated here rather than
+  # inherited: take the image, and go to the registry only when this
+  # machine has no copy of it yet. A registry with nothing to hand over
+  # falls back to the build, which is what keeps a clone working in the
+  # stretch before the first release is tagged.
+  pull_policy: missing
+  environment:
+    APP_URL: http://localhost:8080
+    # Both the framework's log stack and the fetcher's output then land in
+    # `docker compose logs` instead of a file inside a container.
+    LOG_STACK: stderr
+    DB_HOST: db
+    DB_PORT: 5432
+    DB_DATABASE: garmin
+    DB_USERNAME: garmin
+    DB_PASSWORD: garmin
+    # One role for all three schemas. The privilege split in
+    # database/postgres/roles.sql is worth having where the dashboard is
+    # reachable from outside; here it would only be three more passwords.
+    GARMIN_FETCH_DSN: postgresql://garmin:garmin@db:5432/garmin
+  volumes:
+    - ./.env:/app/.env
+  depends_on:
+    db:
+      condition: service_healthy
+
+services:
+  db:
+    image: postgres:17
+    environment:
+      POSTGRES_DB: garmin
+      POSTGRES_USER: garmin
+      POSTGRES_PASSWORD: garmin
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      # "The container is running" and "Postgres accepts connections" are
+      # a few seconds apart, and everything else here waits for the second.
+      test: ['CMD-SHELL', 'pg_isready -U garmin -d garmin']
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    restart: unless-stopped
+
+  # Migrations, keys and the mirror's tables. Runs to completion once per
+  # `up`; the three long-lived services below wait for it rather than each
+  # doing the same work at the same moment.
+  boot:
+    <<: *app
+    command: ['/app/docker/boot.sh']
+    restart: 'no'
+
+  app:
+    <<: *app
+    ports:
+      - '8080:80'
+    healthcheck:
+      test: ['CMD', 'curl', '-fsS', 'http://127.0.0.1/up']
+      interval: 30s
+      timeout: 5s
+      start_period: 30s
+      retries: 3
+    depends_on:
+      db:
+        condition: service_healthy
+      boot:
+        condition: service_completed_successfully
+    restart: unless-stopped
+
+  worker:
+    <<: *app
+    # --tries=1 because a fetch that failed on a broken Garmin session fails
+    # the same way three times. The --timeout does not govern the fetch:
+    # RunGarminFetch carries its own (GARMIN_FETCH_TIMEOUT plus a margin),
+    # which takes precedence over the worker's. This flag bounds the jobs
+    # without one of their own, none of which runs long.
+    command: ['php', 'artisan', 'queue:work', '--tries=1', '--timeout=1200']
+    depends_on:
+      db:
+        condition: service_healthy
+      boot:
+        condition: service_completed_successfully
+    restart: unless-stopped
+
+  # The recurring half: the three daily fetches and the health alerts, at
+  # the times in GARMIN_FETCH_TIMES.
+  #
+  # Its own service here, unlike on a platform, where docker/work.sh puts it
+  # in the worker's container to avoid paying for a second one. A container
+  # is free on your own machine, and two log streams beat one interleaved.
+  scheduler:
+    <<: *app
+    command: ['php', 'artisan', 'schedule:work']
+    depends_on:
+      db:
+        condition: service_healthy
+      boot:
+        condition: service_completed_successfully
+    restart: unless-stopped
+
+volumes:
+  db-data:

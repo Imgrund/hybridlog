@@ -1,0 +1,91 @@
+# Fly.io deployment. One image, two process groups: the dashboard, and the
+# background machine that runs the fetches and starts them on time.
+#
+# Any platform that builds a Dockerfile works the same way; this file is
+# here because a manifest is easier to read than a paragraph describing one.
+#
+#   fly launch --no-deploy --copy-config
+#   fly postgres create --name hybridlog-db
+#   fly postgres attach hybridlog-db          # sets DATABASE_URL
+#   fly secrets set APP_KEY="base64:$(openssl rand -base64 32)"
+#   fly deploy
+#
+# DATABASE_URL is all the database configuration there is: config/database.php
+# falls back to it, and so does fetcher/fetch.py.
+#
+# The OAuth signing keys are worth setting before the first connector is
+# paired. A container throws its filesystem away on every deploy, so keys
+# written into storage/ sign the claude.ai connector out again with the next
+# one. Generated here rather than inside a machine, because a key that only
+# ever existed in a machine that is already gone cannot be set as a secret:
+#
+#   openssl genrsa -out oauth-private.key 4096
+#   openssl rsa -in oauth-private.key -pubout -out oauth-public.key
+#   fly secrets set PASSPORT_PRIVATE_KEY="$(cat oauth-private.key)" \
+#                   PASSPORT_PUBLIC_KEY="$(cat oauth-public.key)"
+#   rm oauth-private.key oauth-public.key
+#
+# The Garmin login is interactive and needed about once a year:
+#
+#   fly ssh console -C "/opt/fetcher/bin/python fetcher/login.py"
+
+app = "hybridlog"
+# Where the data lives. Worth putting near the database and near you; the
+# fetcher talks to Garmin from here every morning.
+primary_region = "fra"
+
+# Migrations, the mirror's tables and the signing keys, in a throwaway
+# machine before the new version takes over.
+[deploy]
+  release_command = "/app/docker/boot.sh"
+
+[env]
+  APP_ENV = "production"
+  APP_DEBUG = "false"
+  # Fly terminates TLS at its edge and forwards from an address inside its
+  # network that changes with every deploy, so there is no list to write.
+  # The container is not reachable except through that router.
+  TRUSTED_PROXIES = "*"
+  # Set this to the host name the dashboard answers on, and APP_URL with it.
+  # Both default to nothing useful, and a wrong host name here is a 403.
+  # TRUSTED_HOSTS = "hybridlog.fly.dev"
+  # APP_URL = "https://hybridlog.fly.dev"
+  SESSION_SECURE_COOKIE = "true"
+  # Fly collects stdout and stderr; a log file in the container is lost.
+  LOG_STACK = "stderr"
+  LOG_LEVEL = "info"
+
+[processes]
+  # The image's own command. Fly names the port itself in [http_service]
+  # rather than handing one over in PORT, so the script starts the server
+  # on the SERVER_NAME the image carries.
+  app = "/app/docker/serve.sh"
+  # The queue worker and the scheduler in one machine: each process group
+  # is a machine of its own here, and a scheduler that spends its day
+  # counting minutes does not need one. docker/work.sh holds both and ends
+  # the machine if either of them does.
+  worker = "/app/docker/work.sh"
+
+[http_service]
+  # The port the image listens on: SERVER_NAME is :80 in the Dockerfile.
+  internal_port = 80
+  force_https = true
+  # A single-athlete dashboard is idle most of the day. The machine stops
+  # when nothing is asking and Fly starts it again on the next request,
+  # which costs a few seconds and no money in between.
+  auto_stop_machines = "stop"
+  auto_start_machines = true
+  min_machines_running = 0
+  processes = ["app"]
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "512mb"
+  processes = ["app"]
+
+# The worker only wakes up for a fetch, and the fetcher holds a day of
+# Garmin JSON in memory while it normalizes it.
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "512mb"
+  processes = ["worker"]

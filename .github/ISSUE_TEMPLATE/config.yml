@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Question or setup help
+    url: https://github.com/Imgrund/hybridlog/discussions
+    about: Getting it running, reading a metric, whether something is meant to work that way. Ask here rather than opening an issue.
+  - name: Security problem
+    url: https://github.com/Imgrund/hybridlog/security/policy
+    about: A vulnerability does not belong in an issue. Report it privately, the policy says how.

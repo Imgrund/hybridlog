@@ -1,0 +1,20 @@
+# Ruff is the whole of CI's Python side. The fetcher and the body-model
+# scripts have no suite of their own, so a linter reading them is what
+# stands between a stray name and a fetch that dies at 4am.
+#
+# 3.12 is what the README asks of anyone running the fetcher, so the
+# rewrites ruff proposes may assume it.
+target-version = "py312"
+
+# The bulk sits under 100, but a score of lines carrying SQL or a row of
+# generated columns run past it and read worse broken up. 120 covers them.
+line-length = 120
+
+# Both entry points import a sibling module by bare name, and the import
+# sorter needs to know that is this project rather than a package on PyPI.
+src = ["fetcher", "scripts/body-model"]
+
+[lint]
+# Conservative on purpose: pycodestyle errors, pyflakes, import order and
+# the syntax that 3.12 made older forms obsolete. No opinionated groups.
+select = ["E", "F", "I", "UP"]

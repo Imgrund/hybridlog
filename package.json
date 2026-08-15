@@ -1,0 +1,22 @@
+{
+    "name": "hybridlog",
+    "$schema": "https://www.schemastore.org/package.json",
+    "private": true,
+    "type": "module",
+    "scripts": {
+        "build": "vite build",
+        "dev": "vite"
+    },
+    "devDependencies": {
+        "@tailwindcss/vite": "^4.0.0",
+        "concurrently": "^10.0.4",
+        "laravel-vite-plugin": "^3.2",
+        "tailwindcss": "^4.0.0",
+        "vite": "^8.2.1"
+    },
+    "dependencies": {
+        "alpinejs": "^3.16.1",
+        "chart.js": "^4.5.1",
+        "three": "^0.185.1"
+    }
+}

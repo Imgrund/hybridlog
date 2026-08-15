@@ -1,0 +1,3824 @@
+@import 'tailwindcss';
+
+@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
+@source '../../storage/framework/views/*.php';
+
+/* The display face is condensed because the verdict has to shout in one
+   line, but Barlow Condensed ExtraBold was the wrong condensed: its
+   counters are so narrow that the headline's own -0.075em welded "ll"
+   and "ie" into single strokes, and the answer of the day read as a
+   smear. Oswald is drawn wide enough in the stem gaps to survive
+   negative tracking, keeps the athletic poster rhythm the world asks
+   for, and covers its whole weight axis in one variable file per
+   subset. Its ceiling is 700, so nothing here may ask for 800. */
+@font-face {
+    font-family: 'Hybrid Display';
+    src: url('../fonts/oswald-latin-variable.woff2') format('woff2-variations');
+    font-style: normal;
+    font-weight: 200 700;
+    font-display: swap;
+    unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+        U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191,
+        U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+    font-family: 'Hybrid Display';
+    src: url('../fonts/oswald-latin-ext-variable.woff2') format('woff2-variations');
+    font-style: normal;
+    font-weight: 200 700;
+    font-display: swap;
+    unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF,
+        U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020,
+        U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+/* The body face is hosted rather than borrowed. Avenir Next, the face
+   this design was drawn in, exists on Apple devices only; everywhere else the page silently fell
+   back to system-ui and read as a different design. Mulish is the closest
+   licence-clean geometric humanist, one variable file for the whole
+   weight axis, split latin / latin-ext so a German page never pays for
+   glyphs it does not set. Avenir Next stays behind it as the fallback if
+   the file ever fails to arrive. */
+@font-face {
+    font-family: 'Hybrid Text';
+    src: url('../fonts/mulish-latin-variable.woff2') format('woff2-variations');
+    font-style: normal;
+    font-weight: 200 1000;
+    font-display: swap;
+    unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+        U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191,
+        U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+    font-family: 'Hybrid Text';
+    src: url('../fonts/mulish-latin-ext-variable.woff2') format('woff2-variations');
+    font-style: normal;
+    font-weight: 200 1000;
+    font-display: swap;
+    unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF,
+        U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020,
+        U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+/* ==================================================================
+   World: Kinetic Tape Atlas. Graphite textile ground,
+   condensed display type, electric tape that binds hierarchy and
+   state, one acid action per viewport. Dark-first, light mode is
+   first-class. The equal-weight sports-health card cockpit this file
+   started as is the anti-reference now: do not restore ranked tiles,
+   benchmark imitation, or a second saturated accent.
+   ================================================================== */
+:root {
+    /* dark is the default scene: morning desk, evening phone. The page
+       is graphite textile, a card sits one step above it behind a
+       hairline, and the warm off-white ink family keeps the surface
+       from reading as a cold terminal. Light mode is the same world on
+       paper: warm greys, the same tape, the same one acid action. */
+    color-scheme: dark;
+    --page: #111315;
+    --card: #15181b;
+    --card-2: #1c2024;
+    --text-primary: #f3f0e8;
+    --text-secondary: #b7b8b3;
+    --text-muted: #7f8588;
+    --hairline: rgba(243, 240, 232, 0.11);
+    --gridline: rgba(243, 240, 232, 0.08);
+    --baseline: rgba(243, 240, 232, 0.22);
+
+    --series-1: #2f6bff;
+    --series-2: #ff7048;
+    --series-1-soft: rgba(47, 107, 255, 0.18);
+    /* The structural tape: the band that binds answer to action to
+       evidence. Electric blue in both themes, adjacent to but never
+       equal to the data series, so a chart line cannot read as chrome. */
+    --tape-blue: #2463ef;
+    --tape-blue-light: #4b83ff;
+    /* Opaque lower step of the same accent, for the quieter half of a
+       stacked bar. --series-muted cannot serve there: it is the same grey
+       family as --map-neutral, so a muted segment sitting inside a neutral
+       reference band becomes unreadable. Opaque, not --series-1-soft:
+       whatever the segment covers must not show through it. */
+    --series-1-dim: #173d9a;
+    /* History tone for bar series. A full-colour bar chart gives every
+       week the same claim on attention; greying the past and painting
+       only the current bar is what makes the reference charts readable
+       at a glance. Must stay legible on its own, just clearly behind. */
+    --series-muted: #3c4653;
+    --diverge-neg: #e66767;
+
+    /* The four-step judgement scale. Good deliberately carries no colour
+       of its own: a value inside its corridor is the baseline, not an
+       event, so it takes the page's own text colour and the one saturated
+       move in a viewport stays the action. Only deviations escalate, and
+       they escalate on the warm side the palette documents. A body map of
+       five green OKs next to one amber finding shouted at everything
+       except the one thing that needed reading. There is no --status-good
+       fill for the same reason: nothing tints for the absence of a
+       problem. */
+    --status-warning: #fab219;
+    --status-serious: #ff7048;
+    --status-critical: #d03b3b;
+    --status-good-ink: var(--text-primary);
+    --status-warning-ink: #e0a625;
+    --status-serious-ink: #ff997d;
+    --status-critical-ink: #e26a6a;
+
+    /* Connection state is not a judgement about the athlete, it is whether
+       a service is attached, and green is the convention there. Its own
+       token, so no status carrier can borrow it back. */
+    --status-linked: #45c245;
+
+    --map-neutral: #262a31;
+    --map-static: #1d2026;
+    --map-hatch: #3f4650;
+    /* The solid has no outline to hold a shape the way the flat figure
+       does, so head, hands and feet need a clay that carries against the
+       card on its own. Only ever used for parts that make no claim. */
+    --map-solid-clay: #333941;
+
+    /* The one light over the figure, blended in soft-light so it lifts and
+       sinks whatever colour the zone carries instead of tinting it. White
+       towards the light, black away from it, nothing in the middle. */
+    --map-shade-top: rgba(255, 255, 255, 0.34);
+    --map-shade-mid: rgba(255, 255, 255, 0);
+    --map-shade-bottom: rgba(0, 0, 0, 0.42);
+    /* The seam between two zones. Darker than the card so the muscles read
+       as separate bodies rather than as one painted surface. */
+    --map-seam: #10131a;
+    /* Second channel on the figure: a zone that needs a decision today. */
+    --map-flag: #ff7048;
+    --map-symptom: #d8ff3f;
+    --map-symptom-ink: #1a1c12;
+
+    /* Ten steps spaced evenly in OKLab, not in hex. The previous ramp was
+       interpolated in sRGB and spent its first four steps inside eight
+       units of lightness, so the low-load end, which is where a normal
+       training day actually sits, arrived as one dark blue. Each step is
+       now about 0.059 in lightness, and the hue drifts blue to cyan so
+       neighbouring steps separate by two channels rather than one. The
+       drift stops short of teal: --status-linked is green and --map-flag
+       is orange, and neither may be reachable from the load ramp. */
+    --load-0: #293651;
+    --load-1: #314765;
+    --load-2: #38597a;
+    --load-3: #3d6c8e;
+    --load-4: #417fa2;
+    --load-5: #4494b5;
+    --load-6: #47a9c6;
+    --load-7: #49bfd6;
+    --load-8: #4ed5e5;
+    --load-9: #55ebf1;
+
+    /* A hover has to move the surface toward the eye, and which direction
+       that is depends on the theme: lighter against a dark page, darker
+       against a light one. A single brightness() filter can only do one of
+       the two, so the direction is a theme value rather than a rule. */
+    --accent-hover: color-mix(in oklab, var(--series-1) 88%, white);
+    --zone-hover: brightness(1.18) saturate(1.15);
+    /* All three segmented controls mark their choice with a --card pill, so
+       a half-strength one reads as a preview of the click rather than as a
+       competing signal. Tinting the other way would make the hovered tab
+       fight the selected one, because on the dark theme the track is the
+       lighter surface and the pill the darker. Needs no light-theme
+       counterpart: --card already flips with the theme. */
+    --seg-hover: color-mix(in oklab, var(--card) 55%, transparent);
+
+    --shadow-card: none;
+
+    /* One elevation model for the whole app. These four cover every raised
+       thing there is: a menu or tooltip that pops, the docked bar casting
+       upward, a floating control, a sheet. Written as tokens because the
+       same job had drifted to five different alphas across the file. */
+    --shadow-pop: 0 12px 32px rgba(0, 0, 0, 0.28);
+    --shadow-dock: 0 -14px 40px rgb(0 0 0 / 0.32);
+    --shadow-float: 0 2px 5px rgba(0, 0, 0, 0.2), 0 12px 30px rgba(0, 0, 0, 0.24);
+    --shadow-sheet: 0 1rem 3rem rgba(0, 0, 0, 0.28);
+
+    /* Warm white that must not flip with the theme: it sits on a filled
+       accent, and the accent is dark in both themes. */
+    --on-accent: #f3f0e8;
+    /* Type that sits ON the tape. The band is electric blue in both themes,
+       so text lying on it cannot follow the theme: warm white clears 5.2:1
+       over the tape in either mode, while the light-mode ink reaches 3.1:1
+       and leaves a 0.68rem label under the 4.5:1 it needs. Deliberately not
+       overridden in the light block below. */
+    --on-tape: #f3f0e8;
+    /* How far the textured tape lets its ground through. The texture is
+       opaque, so this veil is the only thing that makes type on the band
+       theme-dependent at all: at 0.9 over graphite the band darkens and
+       --on-tape measures a median 6.8:1, but the same 0.9 over warm paper
+       lightens it to a median 5.1:1 and pushes 24 % of the glyph pixels
+       under the 4.5:1 a small label needs. Light mode therefore lets the
+       band stand at full strength, where the texture's own range leaves
+       6 % under AA instead. Dark mode keeps the veil, which there helps. */
+    --tape-veil: 0.9;
+
+    /* The one acid action per viewport, and the ink that sits on it. */
+    --action: #d8ff3f;
+    --action-ink: #111315;
+
+    /* The smallest step on the scale: a tick, a bar end, anything too
+       small for the xs corner to be anything but a smudge. */
+    --radius-mark: 3px;
+    --radius-xs: 8px;
+    --radius-md: 18px;
+    --radius-lg: 28px;
+    /* The corner of a full-bleed narrative plate. Fluid between the xl and
+       3xl steps, because such a plate is the page's one full-width object
+       and its corner should grow with the viewport. Today and the
+       specialist answer plates share it so their corners cannot drift. */
+    --radius-plate: clamp(1.25rem, 3vw, 2.4rem);
+}
+
+@media (prefers-color-scheme: light) {
+    :root {
+        color-scheme: light;
+        --page: #eeece4;
+        --card: #f8f6ef;
+        --card-2: #e5e2d9;
+        --text-primary: #151719;
+        --text-secondary: #4f5354;
+        --text-muted: #5f6565;
+        --hairline: rgba(21, 23, 25, 0.13);
+        --gridline: rgba(21, 23, 25, 0.09);
+        --baseline: rgba(21, 23, 25, 0.25);
+
+        --series-1: #1556e8;
+        --series-2: #e94e28;
+        --series-1-soft: rgba(21, 86, 232, 0.14);
+        --tape-blue: #1556e8;
+        --tape-blue-light: #2e6cf3;
+        /* The band stands opaque here: on paper the veil works against the
+           type it carries rather than for it. See --tape-veil above. */
+        --tape-veil: 1;
+        /* Sits between the full accent and the neutral band, roughly two
+           steps from each. Lighter and it disappears into the corridor
+           fill; darker and it stops reading as the quieter of the two
+           stacked segments. */
+        --series-1-dim: #7699ec;
+        --series-muted: #ccd2da;
+        --diverge-neg: #e34948;
+
+        /* No good ink here: it resolves to --text-primary, which this block
+           already flips to the paper theme's ink. */
+        --status-warning-ink: #7a5200;
+        --status-serious-ink: #a52f13;
+        --status-critical-ink: #a52222;
+        --status-linked: #0f7a0f;
+
+        --map-neutral: #e9ebee;
+        --map-static: #f0f1f4;
+        --map-hatch: #bcc2cb;
+        --map-solid-clay: #dcdfe4;
+
+        /* Paper takes a gentler light: the fills start bright, so the same
+           strength would blow the lit side out to white. */
+        --map-shade-top: rgba(255, 255, 255, 0.5);
+        --map-shade-mid: rgba(255, 255, 255, 0);
+        --map-shade-bottom: rgba(0, 0, 0, 0.24);
+        --map-seam: #ffffff;
+        --map-flag: #d1441c;
+        --map-symptom: #6b7d0a;
+        --map-symptom-ink: #ffffff;
+
+        /* Same even OKLab spacing as the dark ramp, running the other way:
+           against a light card the loaded end has to darken to stand out.
+           No hue drift here, because a light surface loses chroma before it
+           loses lightness, so lightness carries the whole order. */
+        --load-0: #cbe3fb;
+        --load-1: #b5d1f1;
+        --load-2: #9fc0e7;
+        --load-3: #8aaedc;
+        --load-4: #769dd2;
+        --load-5: #628bc7;
+        --load-6: #507abd;
+        --load-7: #3e68b2;
+        --load-8: #2e56a7;
+        --load-9: #1f449c;
+
+        --accent-hover: color-mix(in oklab, var(--series-1) 88%, black);
+        --zone-hover: brightness(0.92) saturate(1.2);
+
+        --shadow-card: 0 1px 2px rgba(16, 24, 40, 0.06), 0 6px 16px rgba(16, 24, 40, 0.06);
+
+        --action: #bfe91c;
+    }
+}
+
+@theme inline {
+    --color-secondary: var(--text-secondary);
+    --color-muted: var(--text-muted);
+    --color-hairline: var(--hairline);
+    --font-sans: system-ui, -apple-system, 'Segoe UI', sans-serif;
+}
+
+/* ------------------------------------------------------------------
+   Base
+   ------------------------------------------------------------------ */
+body.viz-root {
+    background-color: var(--page);
+    background-image:
+        repeating-linear-gradient(90deg, transparent 0 159px, color-mix(in oklab, var(--text-primary) 2%, transparent) 160px),
+        repeating-linear-gradient(0deg, transparent 0 159px, color-mix(in oklab, var(--text-primary) 1.5%, transparent) 160px);
+    color: var(--text-primary);
+    font-family: "Hybrid Text", "Avenir Next", Avenir, "Helvetica Neue", system-ui, sans-serif;
+    font-feature-settings: 'tnum' 1;
+    letter-spacing: -0.008em;
+}
+
+[x-cloak] {
+    display: none !important;
+}
+
+.num {
+    font-variant-numeric: tabular-nums;
+}
+
+/* ------------------------------------------------------------------
+   Area tabs: segmented strip on a second neutral layer. The track is
+   a shallow recess in the page; the active chip is cut from card
+   material and steps up from the track, in light mode additionally
+   lifted by the card shadow. On narrow screens the strip scrolls horizontally and
+   the half-cut chip at the edge is the affordance for more.
+   ------------------------------------------------------------------ */
+.tablist {
+    position: relative;
+    display: flex;
+    gap: 0.25rem;
+    width: fit-content;
+    max-width: 100%;
+    padding: 0.3rem;
+    border-radius: 999px;
+    background: color-mix(in oklab, var(--text-primary) 5%, transparent);
+    overflow-x: auto;
+    scrollbar-width: none;
+}
+
+.tablist::-webkit-scrollbar {
+    display: none;
+}
+
+.tab {
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    border-radius: 999px;
+    padding: 0.44rem 1.05rem;
+    font-size: 0.86rem;
+    font-weight: 600;
+    line-height: 1.2;
+    color: var(--text-secondary);
+    white-space: nowrap;
+    cursor: pointer;
+    transition: color 150ms ease, background-color 150ms ease;
+}
+
+/* The tint is what makes the target legible: without it the hover only
+   brightens the label and never shows how far the hit area reaches. The
+   selected pill below wins on the active tab because it is the later rule
+   at equal specificity, which is why this one carries no :not(). */
+.tab:hover {
+    color: var(--text-primary);
+    background: var(--seg-hover);
+}
+
+/* The ring must survive the scroll container: the track's 0.3rem
+   padding is wider than outline width plus offset, so it never clips. */
+.tab:focus-visible {
+    outline: 2px solid var(--series-1);
+    outline-offset: 1px;
+}
+
+.tab[aria-selected='true'] {
+    background: var(--card);
+    color: var(--text-primary);
+    box-shadow: var(--shadow-card);
+}
+
+/* Honest item count (Coach): neutral tone, never an accent badge. */
+.tab-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 1.35em;
+    padding: 0.1em 0.35em;
+    border-radius: 999px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    line-height: 1.25;
+    font-variant-numeric: tabular-nums;
+    color: var(--text-secondary);
+    background: color-mix(in oklab, var(--text-secondary) 16%, transparent);
+}
+
+/* ------------------------------------------------------------------
+   Client picker on /connect: one set-up instruction at a time, chosen
+   from a strip that borrows the tab vocabulary above.
+
+   A radio group rather than a scripted tablist, for two reasons. The
+   choice costs no JavaScript, so the instructions are readable while
+   the bundle is still loading and on a page where it never arrives;
+   and a radio group already answers the arrow keys, which a tablist
+   only does once somebody writes the handler.
+
+   The @supports guard is the fallback, not decoration: where :has() is
+   missing nothing hides, and the section degrades into the stack of
+   every client's steps, which is exactly the page this replaced.
+   ------------------------------------------------------------------ */
+.client-picker > fieldset {
+    border: 0;
+    padding: 0;
+    margin: 0;
+}
+
+.client-strip {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+    width: fit-content;
+    max-width: 100%;
+    padding: 0.3rem;
+    border-radius: 1.1rem;
+    background: color-mix(in oklab, var(--text-primary) 5%, transparent);
+}
+
+/* Off-screen rather than display:none: a hidden input keeps neither
+   focus nor the arrow-key behaviour this control is built on. */
+.client-strip input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+}
+
+.client-choice {
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    border-radius: 999px;
+    padding: 0.44rem 1.05rem;
+    font-size: 0.86rem;
+    font-weight: 600;
+    line-height: 1.2;
+    color: var(--text-secondary);
+    white-space: nowrap;
+    cursor: pointer;
+    transition: color 150ms ease, background-color 150ms ease;
+}
+
+.client-choice:hover {
+    color: var(--text-primary);
+    background: var(--seg-hover);
+}
+
+/* The ring belongs on the label because the input it describes is the
+   off-screen one; :focus-visible keeps it off a mouse click. */
+.client-strip input:focus-visible + .client-choice {
+    outline: 2px solid var(--series-1);
+    outline-offset: 1px;
+}
+
+.client-strip input:checked + .client-choice {
+    background: var(--card);
+    color: var(--text-primary);
+    box-shadow: var(--shadow-card);
+}
+
+@supports selector(:has(*)) {
+    .client-picker .client-panel {
+        display: none;
+    }
+
+    .client-picker:has(#client-claude:checked) .client-panel[data-client='claude'],
+    .client-picker:has(#client-chatgpt:checked) .client-panel[data-client='chatgpt'],
+    .client-picker:has(#client-langdock:checked) .client-panel[data-client='langdock'],
+    .client-picker:has(#client-lmstudio:checked) .client-panel[data-client='lmstudio'],
+    .client-picker:has(#client-local:checked) .client-panel[data-client='local'] {
+        display: block;
+    }
+}
+
+/* ------------------------------------------------------------------
+   Tab band: tablist left, global range switch right. When both cannot
+   share a row (narrow screens) the switch drops to its own line and
+   stays right-aligned; neither control shrinks.
+   ------------------------------------------------------------------ */
+.tabbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.6rem 1rem;
+}
+
+/* ------------------------------------------------------------------
+   Range switch: one display window for every series below the answer
+   zone. Same segmented vocabulary as the tabs; the active chip is cut
+   from card material, so the dark-mode surface inversion of the tabs
+   (card *below* page) carries over unchanged.
+   ------------------------------------------------------------------ */
+.range-switch {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 0.55rem;
+    margin-left: auto;
+    min-width: 0;
+}
+
+/* The window control re-fetches series. Two panels hold none, so there it
+   would be a control that answers nothing. Taken out of the layout, not
+   merely made invisible: while it shares the row with the tablist it adds
+   no height of its own, so removing it there costs zero pixels and the tabs
+   do not move. Once the row is too narrow for both, it wraps to a line of
+   its own, and an invisible control on that line leaves an empty band as
+   tall as the tabs (measured: 48px). Where the row breaks depends on how
+   many areas the reader kept, not on the viewport, so there is no width to
+   hang a media query on. display:none drops it out of the tab order and the
+   accessibility tree just as visibility did. */
+[data-range-aware='false'] .range-switch {
+    display: none;
+}
+
+.range-label {
+    font-size: 0.72rem;
+    font-weight: 650;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-muted);
+}
+
+.range-track {
+    display: flex;
+    gap: 0.25rem;
+    padding: 0.3rem;
+    border-radius: 999px;
+    background: color-mix(in oklab, var(--text-primary) 5%, transparent);
+}
+
+.range-seg {
+    flex: none;
+    border-radius: 999px;
+    padding: 0.44rem 0.7rem;
+    font-size: 0.78rem;
+    font-weight: 600;
+    line-height: 1.2;
+    font-variant-numeric: tabular-nums;
+    color: var(--text-secondary);
+    white-space: nowrap;
+    cursor: pointer;
+    transition: color 150ms ease, background-color 150ms ease;
+}
+
+.range-seg:hover {
+    color: var(--text-primary);
+    background: var(--seg-hover);
+}
+
+.range-seg:focus-visible {
+    outline: 2px solid var(--series-1);
+    outline-offset: 1px;
+}
+
+.range-seg[aria-checked='true'] {
+    background: var(--card);
+    color: var(--text-primary);
+    box-shadow: var(--shadow-card);
+}
+
+/* A window the mirror is too young for. Muted rather than faded out, because
+   a disabled control still has to be readable: this one is the only place the
+   dashboard says a year of history does not exist yet, and a number nobody
+   can read says nothing. It keeps its size so the track does not reflow on
+   the day it comes back. The strikethrough carries the state without hue,
+   for the same reason selected filters never rely on colour alone. */
+.range-seg:disabled {
+    color: var(--text-muted);
+    cursor: not-allowed;
+    text-decoration: line-through;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.1em;
+}
+
+.range-seg:disabled:hover {
+    color: var(--text-muted);
+    background: none;
+}
+
+/* Failure names the problem; the switch snaps back to the last range.
+   The message takes its own line under the track so the control never
+   shifts sideways when it appears. */
+.range-error {
+    flex: 1 0 100%;
+    text-align: right;
+    font-size: 0.72rem;
+    color: var(--status-critical-ink);
+}
+
+/* Range swap in flight: content keeps its box and dims in place, no
+   spinner, no height change, so the page cannot jump. The overlay
+   switches dim with their charts, so no one retunes a plot that is
+   about to be replaced. */
+[data-range-busy] .chart-box,
+[data-range-busy] .kpi-row,
+[data-range-busy] .overlay-switch {
+    opacity: 0.45;
+    pointer-events: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+    .chart-box,
+    .kpi-row,
+    .overlay-switch {
+        transition: opacity 180ms ease;
+    }
+}
+
+/* A chart that has not been built yet, because its panel was closed
+   when the page loaded. It fills the box it already occupies rather
+   than announcing itself: no spinner, no text, nothing that would be
+   read as an error, and no layout shift when the real chart lands on
+   top of it a frame later. Deliberately shapeless, because this same
+   placeholder stands in for a line chart, a bar chart and a radar. */
+.chart-box[data-pending]::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 3px;
+    background: linear-gradient(var(--baseline), var(--baseline)) no-repeat left bottom / 100% 1px,
+        linear-gradient(var(--gridline), var(--gridline));
+    opacity: 0.7;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+    .chart-box[data-pending]::after {
+        animation: chart-pending 1.4s ease-in-out infinite;
+    }
+}
+
+@keyframes chart-pending {
+    50% {
+        opacity: 0.22;
+    }
+}
+
+/* Honest empty window: a range without drawable points says so in
+   words instead of leaving a blank pair of axes (chart-box is already
+   position: relative with a fixed height). */
+.chart-empty {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    padding: 1rem;
+    text-align: center;
+    font-size: 0.78rem;
+    color: var(--text-muted);
+}
+
+/* ------------------------------------------------------------------
+   Tab panels
+   ------------------------------------------------------------------ */
+[role='tabpanel']:focus-visible {
+    outline: 2px solid var(--series-1);
+    outline-offset: 6px;
+}
+
+/* One soft settle on panel change: state feedback, no choreography. */
+@media (prefers-reduced-motion: no-preference) {
+    [role='tabpanel'] {
+        animation: panel-in 190ms cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    @keyframes panel-in {
+        from {
+            opacity: 0;
+            transform: translateY(5px);
+        }
+    }
+}
+
+/* The data-limit annotation each area header used to carry; it stays
+   visible at the top of the panel (product truth, never a tooltip). */
+.panel-note {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+}
+
+.panel-lede {
+    font-size: 0.86rem;
+    color: var(--text-secondary);
+}
+
+/* ------------------------------------------------------------------
+   Cards
+   ------------------------------------------------------------------ */
+/* Inset tuned for a page read as one cockpit rather than one card at a
+   time: the tonal ground already separates a card from the page, so the
+   padding only has to keep type off the radius. What the tighter inset
+   buys is vertical, and it is spent on getting the next card into the
+   same screen instead of on air inside this one. */
+.card {
+    border: 1px solid var(--hairline);
+    border-radius: var(--radius-md);
+    background: color-mix(in oklab, var(--card) 94%, transparent);
+    padding: 0.8rem 0.95rem;
+}
+
+/* Phone: the 12px page gutter already frames the card; the desktop
+   inset would spend another chunk of a 390px screen on plain air. */
+@media (max-width: 560px) {
+    .card {
+        padding: 0.75rem 0.8rem;
+    }
+}
+
+/* A lone card at the end of a two-column row leaves a hole that reads as
+   a card that failed to load, not as breathing room. Let it take the
+   full width instead. Counting :nth-child(odd) keeps this correct as the
+   AI adds or removes dynamic cards in a section. */
+@media (min-width: 1024px) {
+    .card-grid > :last-child:nth-child(odd) {
+        grid-column: 1 / -1;
+    }
+}
+
+/* Grid rows share the tallest card's height, so a card with no plot or a
+   shorter one trails empty space under its numbers. Pinning the KPI row
+   to the bottom edge turns that leftover into deliberate air above the
+   footer instead of a ragged gap below it. */
+.card-grid > .card {
+    display: flex;
+    flex-direction: column;
+}
+
+.card-grid > .card > .kpi-row {
+    margin-top: auto;
+    padding-top: 0.6rem;
+}
+
+/* .card-title, the numeric-cell label, is defined in the numeric
+   cells block below together with its KPI sibling. */
+
+/* Two-line card header: what the card is, then what it shows. The
+   descriptor carries the qualifier (window, method, unit) that used to
+   sit inline behind the title and got lost at a glance. */
+.card-head {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+}
+
+.card-name {
+    font-size: 1rem;
+    font-weight: 700;
+    letter-spacing: -0.012em;
+    line-height: 1.25;
+}
+
+.card-desc {
+    margin-top: 0.1rem;
+    font-size: 0.78rem;
+    line-height: 1.35;
+    color: var(--text-muted);
+}
+
+.card-head-aside {
+    margin-left: auto;
+    flex: none;
+}
+
+/* On a phone the controls in a header can be wider than what is left for
+   the title: an open confirm is a whole sentence next to it, and the title
+   block has min-width 0, so it shrinks instead of pushing anything down.
+   The basis makes it push: below 60 % of the header the controls wrap to
+   their own row, which beats a title stacked one word per line. */
+@media (max-width: 560px) {
+    .card-head {
+        flex-wrap: wrap;
+    }
+
+    .card-head > .min-w-0 {
+        flex: 1 1 60%;
+    }
+}
+
+/* ------------------------------------------------------------------
+   Numeric cells: the hero-strip and longevity stat cells (a label
+   over the card's one big number) and the card-footer KPI tiles
+   (the two or three numbers that answer "where do I stand" without
+   reading the chart above them).
+
+   THE LABEL RULE, one grammar in two scales. Label: 0.72rem, weight
+   650, sentence case, muted ink, no tracking; card-title is the same
+   voice doing double duty over mini panels (hero week, body-map
+   legend). Value: weight 700, tabular figures, -0.02em, primary ink
+   (status ink only where the cell stamps a status). Unit: weight
+   500, secondary ink, on the value's baseline at 45 % of the value
+   size with a 0.72rem floor, one 0.2em gap. Context line (optional):
+   0.78rem muted below the value block. Vertical rhythm is em-based
+   (label to value 0.16em of the value), so both scales keep one
+   proportion. Only the value size separates the two systems, and it
+   names the cell's job: 2rem where the number is the card's content,
+   1.15rem where it footnotes a chart. Sentence case is deliberate:
+   caps with tracking truncates real footer labels ("Streuung
+   Aufstehen") even at desktop width, and a label that ellipsizes
+   stops naming its measure. A KPI label may open with a series dot
+   tying the tile to the chart series it summarises; the dot is
+   load-bearing, never decoration.
+   ------------------------------------------------------------------ */
+.card-title,
+.kpi-label {
+    font-size: 0.72rem;
+    font-weight: 650;
+    color: var(--text-muted);
+}
+
+.stat-value,
+.kpi-value {
+    margin-top: 0.16em;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    font-variant-numeric: tabular-nums;
+    display: flex;
+    align-items: baseline;
+    gap: 0.2em;
+    flex-wrap: wrap;
+}
+
+.stat-unit,
+.kpi-unit {
+    font-size: max(0.45em, 0.72rem);
+    font-weight: 500;
+    letter-spacing: 0;
+    color: var(--text-secondary);
+}
+
+/* Stat scale: the number is the card's content. */
+.stat-value {
+    font-size: 2rem;
+    line-height: 1.05;
+}
+
+/* A status pill next to a 2rem number wraps in a narrow column and makes
+   that one cell taller than its whole row. Colouring the number itself
+   says the same thing in one line, and it is the only place on the page
+   where a value carries status colour, so it stays the eye's first stop. */
+.stat-value[data-status='good'] {
+    color: var(--status-good-ink);
+}
+
+.stat-value[data-status='warning'] {
+    color: var(--status-warning-ink);
+}
+
+.stat-value[data-status='serious'] {
+    color: var(--status-serious-ink);
+}
+
+.stat-value[data-status='critical'] {
+    color: var(--status-critical-ink);
+}
+
+/* The optional context line under a stat value, and the methodology
+   footnote under a card. The measure is capped for the footnote's
+   sake: those paragraphs are the honest fine print of the product,
+   and honest fine print that runs 130 characters a line does not get
+   read. Short refs never reach the cap, so one voice serves both. */
+.stat-ref {
+    margin-top: 0.4rem;
+    font-size: 0.78rem;
+    line-height: 1.5;
+    max-width: 68ch;
+    color: var(--text-muted);
+}
+
+/* What the weather went together with, under the chart it might explain.
+   Reads as a finding rather than as fine print, so it carries the body
+   colour and sits above the methodology line; the caveat that follows it
+   drops back to muted, because "not a cause" is the qualifier and not the
+   sentence. The drift notes share the form on purpose: both are quiet
+   observations beside the metric they describe, and two shapes for one
+   kind of sentence would ask the reader to learn a difference that is
+   not there. */
+.wx-note{
+    margin-top: 0.5rem;
+    font-size: 0.8rem;
+    line-height: 1.5;
+    max-width: 68ch;
+}
+
+.wx-note-mark{
+    display: inline-block;
+    width: 0.4rem;
+    height: 0.4rem;
+    margin-right: 0.4rem;
+    border-radius: 50%;
+    vertical-align: 0.1rem;
+    background: var(--series-muted);
+}
+
+.wx-note-caveat{
+    color: var(--text-muted);
+}
+
+/* KPI (footer) scale: structure of the tile row. */
+.kpi-row {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: 1fr;
+    gap: 0.45rem;
+    margin-top: 0.6rem;
+}
+
+/* On a phone three tiles in one row get about 110px each and every label
+   ends in an ellipsis. "Fitness (…" is a label that has to be guessed,
+   which is worse than a second row. */
+@media (max-width: 560px) {
+    .kpi-row {
+        grid-auto-flow: row;
+        grid-template-columns: repeat(auto-fit, minmax(9.5rem, 1fr));
+    }
+}
+
+.kpi {
+    min-width: 0;
+    border-radius: 12px;
+    background: var(--card-2);
+    padding: 0.4rem 0.55rem 0.45rem;
+}
+
+.kpi-label {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    white-space: nowrap;
+    overflow: hidden;
+}
+
+.kpi-label span:last-child {
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.kpi-dot {
+    flex: none;
+    width: 0.45rem;
+    height: 0.45rem;
+    border-radius: 999px;
+    background: var(--text-muted);
+}
+
+.kpi-value {
+    font-size: 1.2rem;
+    line-height: 1.15;
+}
+
+/* Sparkline marks: history line in the muted series tone, only the
+   newest point in the accent, ringed in the card colour so it stays
+   legible on top of its own line. Width may shrink in narrow tiles;
+   the viewBox keeps the drawing proportional. */
+.spark {
+    flex: 0 1 auto;
+    min-width: 44px;
+    height: auto;
+}
+
+.spark polyline {
+    fill: none;
+    stroke: var(--series-muted);
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.spark circle {
+    fill: var(--series-1);
+    stroke: var(--card);
+    stroke-width: 2;
+}
+
+/* The bar that empties while a Garmin sign-in waits. Full width, unlike
+   the corridor meter below it: this is a stretch of time running out,
+   not a value on a scale, and it reads as one at a glance from across a
+   room. No transition on the width, deliberately, so it steps once a
+   second like the figure beside it instead of gliding: the one thing an
+   estimate must not do is look like a measurement. */
+.wait-bar {
+    height: 4px;
+    border-radius: 999px;
+    overflow: hidden;
+    background: color-mix(in oklab, var(--text-primary) 8%, transparent);
+}
+
+.wait-bar-fill {
+    height: 100%;
+    border-radius: 999px;
+    background: var(--series-1);
+}
+
+/* Corridor meter for the load ratio: fixed 0–2 scale, the 0,8–1,3
+   corridor as a darker band, the dot in the value's own status ink. */
+.meter {
+    position: relative;
+    flex: 0 1 84px;
+    min-width: 56px;
+    height: 6px;
+    border-radius: 999px;
+    background: color-mix(in oklab, var(--text-primary) 8%, transparent);
+}
+
+/* The load-ratio gauge: the meter's fixed 0-2 scale at reading size,
+   drawn as a half circle of ticks. The corridor is heavier ticks on
+   the same ring rather than a band of its own: a guardrail belongs
+   to the scale, not next to it. Only the needle and its hub carry a
+   colour, and it is the value's status ink, exactly like the meter
+   dot above. The number sits inside the arc, so the figure and the
+   drawing are read as one glance, not as a chart with a caption. */
+.gauge {
+    position: relative;
+    max-width: 15.5rem;
+    margin: 0.85rem auto 0;
+}
+
+.gauge svg {
+    display: block;
+    width: 100%;
+    height: auto;
+}
+
+.gauge-tick {
+    stroke: color-mix(in oklab, var(--text-primary) 14%, transparent);
+    stroke-width: 2.6;
+    stroke-linecap: round;
+}
+
+.gauge-tick-corridor {
+    stroke: color-mix(in oklab, var(--text-primary) 38%, transparent);
+    stroke-width: 2.6;
+    stroke-linecap: round;
+}
+
+.gauge-needle {
+    stroke-width: 3.2;
+    stroke-linecap: round;
+}
+
+/* Only the figure lives inside the arc. The verdict word sits below the
+   drawing as its own line, clear of a horizontal needle at either end
+   of the scale. */
+.gauge-read {
+    position: absolute;
+    inset: auto 0 0;
+    text-align: center;
+}
+
+.gauge-read .stat-value {
+    /* stat-value is a flex row for value+unit pairs, so centering
+       happens on the flex axis, not via text-align. */
+    justify-content: center;
+    font-size: 1.8rem;
+    line-height: 1;
+}
+
+.gauge-word {
+    margin-top: 0.4rem;
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    text-align: center;
+}
+
+/* ------------------------------------------------------------------
+   Status pills (word always written out)
+   ------------------------------------------------------------------ */
+.pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    border-radius: 999px;
+    padding: 0.18rem 0.65rem;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    line-height: 1.3;
+    white-space: nowrap;
+}
+
+.pill::before {
+    content: '';
+    width: 0.42rem;
+    height: 0.42rem;
+    border-radius: 999px;
+    background: currentColor;
+}
+
+/* No tinted chip for good, unlike the three below: the pill still names
+   the band it landed in, it just does not colour itself for the absence
+   of a problem. The neutral chip from .pill stays, so it is an object. */
+.pill[data-status='good'] {
+    color: var(--status-good-ink);
+}
+
+.pill[data-status='warning'] {
+    color: var(--status-warning-ink);
+    background: color-mix(in oklab, var(--status-warning) 16%, transparent);
+}
+
+.pill[data-status='serious'] {
+    color: var(--status-serious-ink);
+    background: color-mix(in oklab, var(--status-serious) 17%, transparent);
+}
+
+.pill[data-status='critical'] {
+    color: var(--status-critical-ink);
+    background: color-mix(in oklab, var(--status-critical) 16%, transparent);
+}
+
+.pill[data-status='neutral'] {
+    color: var(--text-secondary);
+    background: color-mix(in oklab, var(--text-secondary) 14%, transparent);
+}
+
+/* ------------------------------------------------------------------
+   Ring column: the answer plate's instrument cell
+   ------------------------------------------------------------------ */
+.ring-col {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+/* ------------------------------------------------------------------
+   Body map
+   ------------------------------------------------------------------ */
+
+/* Side by side, the two boxes are sized by the unit widths the component
+   hands over rather than split in half. Only the anterior carries caption
+   pills, so only it needs the margin for them, and the posterior stops
+   being scaled down by a margin it never uses. Proportional boxes over
+   proportional viewBoxes means both silhouettes land at one scale. */
+@media (min-width: 640px) {
+    .bm-figures {
+        display: flex;
+    }
+
+    .bm-figures > * {
+        flex: 1 1 0;
+        min-width: 0;
+    }
+
+    .bm-figures > :first-child {
+        flex-grow: var(--bm-ant);
+    }
+
+    .bm-figures > :last-child {
+        flex-grow: var(--bm-post);
+    }
+}
+
+/* Stacked, the caption pills are hidden and the anterior box would draw
+   its silhouette smaller than the posterior's for two margins that hold
+   nothing. It is widened until the silhouette itself spans the column;
+   the empty margin overflows and is clipped away. Both sides then carry
+   the same silhouette scale again, at any column width. */
+@media (max-width: 639px) {
+    .bm-figures > :first-child {
+        overflow: hidden;
+    }
+
+    .bm-figures > :first-child svg {
+        width: calc(var(--bm-ant) / var(--bm-post) * 100%);
+        margin-inline: calc((var(--bm-post) - var(--bm-ant)) / var(--bm-post) * 50%);
+    }
+}
+
+/* The findings card shares a row with the map, whose height is set by two
+   fixed-height silhouettes. Rather than let the five rows trail whatever
+   is left over, the closing hint takes the bottom edge: the same move the
+   KPI rows make in .card-grid, so the leftover reads as air over a
+   footnote instead of as a card that ran out of content. */
+.bm-panel {
+    display: flex;
+    flex-direction: column;
+    /* A tap in the zone list scrolls this card's head into view; the margin
+       keeps it off the very top edge so it reads as a card, not as a page
+       that starts mid-panel. */
+    scroll-margin-top: 1rem;
+}
+
+.bm-panel-body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.bm-panel-foot {
+    margin-top: auto;
+    padding-top: 0.85rem;
+}
+
+/* Below the two-column breakpoint the detail has no room beside the map,
+   and under it there is none either: the two silhouettes alone run close
+   to two phone screens, so opening a zone used to scroll the figure out
+   of sight to reach its own description. As a sheet the detail sits over
+   the lower edge instead. The map keeps its place behind it with the
+   selected zone still contoured, the chip list stays reachable, and
+   nothing about it is modal: the page scrolls on underneath. */
+.bm-sheet {
+    position: fixed;
+    z-index: 40;
+    inset-inline: 0;
+    bottom: 0;
+    /* Half the screen is the sheet's share. Longer details scroll inside
+       it rather than claim the map's half. */
+    max-height: min(58vh, 32rem);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    border-top: 1px solid var(--hairline);
+    border-radius: 18px 18px 0 0;
+    background: var(--card);
+    padding: 0 1.15rem max(1rem, env(safe-area-inset-bottom));
+    box-shadow: var(--shadow-dock);
+}
+
+@media (max-width: 560px) {
+    .bm-sheet {
+        padding-inline: 0.9rem;
+    }
+}
+
+/* It arrives from the edge it stays on: the one motion that says "this
+   is a layer over the page" rather than "the page changed". */
+@media (prefers-reduced-motion: no-preference) {
+    .bm-sheet {
+        animation: bm-sheet-in 220ms ease-out;
+    }
+
+    @keyframes bm-sheet-in {
+        from {
+            transform: translateY(100%);
+        }
+    }
+}
+
+/* Stays put while the detail scrolls, because it carries the two things
+   that answer "what am I looking at": the thumbnail and the name. */
+.bm-sheet-head {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.7rem 0 0.6rem;
+    border-bottom: 1px solid var(--hairline);
+    background: var(--card);
+}
+
+.bm-sheet-title {
+    flex: 1;
+    min-width: 0;
+    font-size: 1rem;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+}
+
+.bm-sheet-close {
+    flex: none;
+    display: grid;
+    place-items: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 999px;
+    background: var(--card-2);
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: color 140ms ease;
+}
+
+.bm-sheet-close:hover {
+    color: var(--text-primary);
+}
+
+/* The map in thumbnail: where the selection sits on the body, for the
+   half of the taps that come from the chip list a screen further down,
+   where the real figure is nowhere near the sheet. Deliberately not a
+   control at this size, the two full silhouettes above it are. */
+.bm-mini {
+    flex: none;
+    display: flex;
+    gap: 0.2rem;
+    height: 4.5rem;
+}
+
+.bm-mini-fig {
+    height: 100%;
+    width: auto;
+}
+
+.bm-mini-zone polygon {
+    fill: var(--map-neutral);
+    stroke: var(--card);
+    stroke-width: 0.6;
+}
+
+.bm-mini-zone.bm-mini-on polygon {
+    fill: var(--series-1);
+    stroke: var(--text-primary);
+    stroke-width: 1.4;
+}
+
+/* Grown by its stroke rather than its radius: r as a CSS property is
+   newer than the browsers this has to run on. */
+.bm-mini-dot {
+    fill: var(--map-static);
+    stroke: none;
+}
+
+.bm-mini-dot.bm-mini-on {
+    fill: var(--series-1);
+    stroke: var(--text-primary);
+    stroke-width: 4;
+}
+
+/* The zone ranking runs the page width, so it counts columns by the room
+   it has, not by the narrow column it used to live in: sixteen zones come
+   out four rows deep instead of eight, which is the difference between a
+   list you scan and a list you scroll. */
+.bm-chip-grid {
+    display: grid;
+    gap: 0.375rem;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+@media (min-width: 640px) {
+    .bm-chip-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+}
+
+@media (min-width: 1024px) {
+    .bm-chip-grid {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+}
+
+/* Strip left, caveats right: a scale stretched over the full page width
+   stops reading as a key and starts reading as a chart. */
+.bm-scale {
+    display: grid;
+    gap: 0.85rem 2.5rem;
+}
+
+@media (min-width: 768px) {
+    .bm-scale {
+        grid-template-columns: minmax(0, 20rem) minmax(0, 1fr);
+        align-items: start;
+    }
+}
+
+.bm-zone polygon {
+    stroke: var(--card);
+    stroke-width: 0.6;
+    cursor: pointer;
+    transition: filter 140ms ease;
+}
+
+.bm-zone:hover polygon {
+    filter: var(--zone-hover);
+}
+
+.bm-zone.bm-selected polygon {
+    stroke: var(--text-primary);
+    stroke-width: 1;
+}
+
+.bm-static polygon {
+    stroke: var(--card);
+    stroke-width: 0.6;
+    fill: var(--map-static);
+}
+
+.bm-marker {
+    cursor: pointer;
+}
+
+.bm-marker circle.dot {
+    fill: var(--card);
+    stroke-width: 1.6;
+}
+
+.bm-leader {
+    stroke: color-mix(in oklab, var(--text-primary) 30%, transparent);
+    stroke-width: 0.55;
+    fill: none;
+}
+
+.bm-marker.bm-selected .bm-leader {
+    stroke-width: 1;
+}
+
+/* caption pills inside the SVG: sized to stay readable at any scale */
+.bm-pill-bg {
+    fill: var(--card-2);
+    stroke: var(--hairline);
+    stroke-width: 0.3;
+}
+
+.bm-cap-name {
+    font-size: 6.2px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    fill: var(--text-primary);
+}
+
+.bm-cap-status {
+    font-size: 5.2px;
+    font-weight: 650;
+}
+
+.bm-marker:hover circle.dot,
+.bm-marker.bm-selected circle.dot {
+    stroke-width: 2.4;
+}
+
+/* On narrow screens the findings list carries the captions */
+@media (max-width: 639px) {
+    .bm-pill-group {
+        display: none;
+    }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+    .bm-leader {
+        stroke-dasharray: 80;
+        stroke-dashoffset: 80;
+        animation: bm-draw 650ms ease-out 250ms forwards;
+    }
+
+    @keyframes bm-draw {
+        to {
+            stroke-dashoffset: 0;
+        }
+    }
+}
+
+/* findings list rows */
+.finding-row {
+    display: flex;
+    width: 100%;
+    align-items: center;
+    gap: 0.7rem;
+    border-radius: 14px;
+    padding: 0.65rem 0.75rem;
+    background: var(--card-2);
+    cursor: pointer;
+    text-align: left;
+    transition: background 140ms ease;
+}
+
+.finding-row:hover {
+    background: color-mix(in oklab, var(--text-primary) 10%, var(--card-2));
+}
+
+/* On a phone the list outlives the selection it triggers, because the
+   detail moved into the sheet, so a row has to say which finding is
+   open down there. Same inset ring the zone chips carry. */
+.finding-row[aria-pressed='true'] {
+    background: color-mix(in oklab, var(--text-primary) 8%, var(--card-2));
+    box-shadow: inset 0 0 0 1.5px var(--text-primary);
+}
+
+.reco {
+    border-radius: 14px;
+    background: var(--card-2);
+    padding: 0.75rem 0.85rem;
+}
+
+.reco-head {
+    font-size: 0.68rem;
+    font-weight: 750;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+}
+
+.bm-back {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    cursor: pointer;
+}
+
+.bm-back:hover {
+    color: var(--text-primary);
+}
+
+.bm-bar {
+    margin-top: 0.4rem;
+    height: 0.5rem;
+    border-radius: 999px;
+    background: var(--map-neutral);
+    overflow: hidden;
+}
+
+/* The value arrives as a translation, not a width: the track clips the
+   overhang, so the filled end keeps its true cap radius and the bar can
+   move on the compositor instead of relaying out every frame. Fully
+   translated out until a zone is selected, so a bar that never got its
+   value reads as no value rather than as a full one. */
+.bm-bar-fill {
+    width: 100%;
+    height: 100%;
+    border-radius: 999px;
+    background: var(--series-1);
+    transform: translateX(calc(var(--bm-bar-v, 0%) - 100%));
+}
+
+/* Hard stops, not a blend: the map paints eleven discrete fills, so the
+   legend has to show the same eleven bands or a zone's colour cannot be
+   read back off the strip. */
+.scale-strip {
+    height: 0.6rem;
+    border-radius: 999px;
+    background: linear-gradient(
+        to right,
+        var(--map-neutral) 0 9.09%,
+        var(--load-0) 9.09% 18.18%,
+        var(--load-1) 18.18% 27.27%,
+        var(--load-2) 27.27% 36.36%,
+        var(--load-3) 36.36% 45.45%,
+        var(--load-4) 45.45% 54.55%,
+        var(--load-5) 54.55% 63.64%,
+        var(--load-6) 63.64% 72.73%,
+        var(--load-7) 72.73% 81.82%,
+        var(--load-8) 81.82% 90.91%,
+        var(--load-9) 90.91% 100%
+    );
+}
+
+/* Tick labels for the load scale. Positioned, not distributed: each label
+   sits at the point of the gradient it names (see the body-map template). */
+.scale-ticks {
+    position: relative;
+    height: 0.95rem;
+    font-size: 0.68rem;
+    color: var(--text-muted);
+}
+
+.scale-ticks span {
+    position: absolute;
+    top: 0;
+    transform: translateX(-50%);
+}
+
+.legend-swatch {
+    flex: none;
+    width: 1.4rem;
+    height: 0.75rem;
+    border-radius: 3px;
+    border: 1px solid var(--hairline);
+}
+
+/* Mirrors the SVG hatch pattern used for zones without load history. */
+.legend-nodata {
+    background:
+        repeating-linear-gradient(
+            45deg,
+            var(--map-hatch) 0 1px,
+            var(--map-neutral) 1px 3.4px
+        );
+}
+
+/* ------------------------------------------------------------------
+   Charts
+   ------------------------------------------------------------------ */
+/* 200px still carries a 90-day curve at a readable amplitude and puts
+   two chart cards in a screen where 240 put one and a half. Anything
+   that genuinely needs the room asks for it by class, below. */
+.chart-box {
+    position: relative;
+    height: 200px;
+    margin-top: 0.55rem;
+}
+
+/* Grows into whatever height the tallest card in the row sets, instead
+   of leaving the surplus as dead space under the numbers. flex-basis 0,
+   not auto: with auto the box would take its height from the canvas
+   Chart.js just sized from the box, and the two would chase each other. */
+.chart-box-tall {
+    height: auto;
+    min-height: 285px;
+    flex: 1 1 0;
+}
+
+/* Shared chart tooltip, one floating layer for every chart, built and
+   moved by app.js. HTML rather than canvas pixels, so the active theme
+   decides its colours live; tone and shadow are the menu panel's, so
+   all floating surfaces speak with one voice, on the card-2 tones. Pointer events stay off because the layer must never
+   swallow the press that is supposed to close it. */
+.chart-tip {
+    position: fixed;
+    z-index: 50;
+    width: max-content;
+    max-width: min(19rem, calc(100vw - 1rem));
+    padding: 0.55rem 0.7rem;
+    border: 1px solid var(--hairline);
+    border-radius: 10px;
+    background: var(--card-2);
+    box-shadow: var(--shadow-pop);
+    font-size: 0.78rem;
+    line-height: 1.4;
+    color: var(--text-secondary);
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 120ms ease;
+}
+
+.chart-tip-title {
+    margin-bottom: 0.2rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.chart-tip-row {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+/* The legend's line swatch at tooltip scale: a short stroke, not a
+   box, keying each row to its series. */
+.chart-tip-key {
+    flex: none;
+    width: 0.75rem;
+    height: 3px;
+    border-radius: 999px;
+}
+
+/* Aggregates under the rows (week total, run share): kept in the
+   secondary ink but weighted like the title, the hierarchy the canvas
+   tooltip gave its footer. */
+.chart-tip-foot {
+    margin-top: 0.2rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
+/* ------------------------------------------------------------------
+   Methodology footer
+   ------------------------------------------------------------------ */
+.methodology {
+    /* The trust paragraph is read, not skimmed past: at container width
+       it ran to 170 characters a line, which nobody reads. */
+    max-width: 68ch;
+    font-size: 0.78rem;
+    color: var(--text-muted);
+}
+
+.methodology b {
+    color: var(--text-secondary);
+    font-weight: 600;
+}
+
+/* ------------------------------------------------------------------ */
+/* Buttons & form fields (login, OAuth consent, connect page)          */
+/* ------------------------------------------------------------------ */
+
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 10px;
+    padding: 0.55rem 1rem;
+    font-size: 0.86rem;
+    font-weight: 600;
+    line-height: 1.2;
+    /* A two-word label wraps inside the button long before the toolbar
+       decides to wrap, which turns a row of buttons into a row of
+       different heights. The label stays on one line; the toolbar is
+       what breaks. */
+    white-space: nowrap;
+    cursor: pointer;
+    transition: background-color 120ms ease, filter 120ms ease, color 120ms ease,
+        transform 120ms ease;
+}
+
+.btn-primary {
+    background: var(--series-1);
+    color: var(--on-accent);
+}
+
+.btn-primary:hover {
+    background: var(--accent-hover);
+}
+
+.btn-ghost {
+    background: color-mix(in oklab, var(--text-primary) 7%, transparent);
+    color: var(--text-secondary);
+}
+
+.btn-ghost:hover {
+    color: var(--text-primary);
+}
+
+/* Header-sized button: same roles, less mass than the form buttons. */
+.btn-sm {
+    gap: 0.4rem;
+    padding: 0.4rem 0.75rem;
+    font-size: 0.78rem;
+}
+
+/* ------------------------------------------------------------------
+   Header actions: one row, one height.
+
+   The controls here carry different content (a word set in caps, a
+   label with an icon, an icon on its own) and each was taking the
+   height its content asked for: 28px for the labelled button, 25px for
+   the icon, about 21px for the pill. Three sizes in a row that should
+   read as one toolbar, none of them aligned on a common centre.
+
+   The height goes on the controls rather than on the row because the
+   fetch button sits inside a form, and it is the form that is the flex
+   child here.
+   ------------------------------------------------------------------ */
+.header-actions .pill,
+.header-actions .btn {
+    height: 1.75rem;
+    padding-block: 0;
+}
+
+.header-actions form {
+    display: inline-flex;
+}
+
+/* An icon with no label gets a square. Left to the button's own
+   horizontal padding it becomes a lozenge, which reads as a label that
+   failed to load rather than as an icon button. */
+.btn-icon {
+    position: relative;
+    width: 1.75rem;
+    padding-inline: 0;
+}
+
+/* Connected state, on the trigger itself. Inset far enough to clear the
+   corner radius, and it never changes the button's footprint. */
+.btn-icon-dot {
+    position: absolute;
+    top: 0.3rem;
+    right: 0.3rem;
+    height: 0.3rem;
+    width: 0.3rem;
+    border-radius: 999px;
+    background: var(--status-linked);
+}
+
+/* Account menu: navigation and state fold behind one icon so the
+   header keeps a single real action. The panel speaks card-2 like the
+   chart tooltips; entries reuse the quiet-link voice. */
+.menu-panel {
+    position: absolute;
+    right: 0;
+    top: calc(100% + 0.4rem);
+    min-width: 11rem;
+    padding: 0.3rem;
+    border-radius: 14px;
+    background: var(--card-2);
+    box-shadow: var(--shadow-pop);
+    z-index: 30;
+}
+
+.menu-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    width: 100%;
+    padding: 0.5rem 0.65rem;
+    border-radius: 10px;
+    font-size: 0.86rem;
+    font-weight: 600;
+    white-space: nowrap;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: color 120ms ease, background 120ms ease;
+}
+
+.menu-item:hover {
+    background: color-mix(in oklab, var(--text-primary) 7%, transparent);
+    color: var(--text-primary);
+}
+
+/* On a phone the action row leaves the title's side and becomes its
+   own full-width line, left-aligned: a wrapped row that keeps
+   justify-end strands its last entry bottom-right with no anchor. */
+@media (max-width: 560px) {
+    .header-actions {
+        width: 100%;
+        justify-content: flex-start;
+        column-gap: 1rem;
+    }
+}
+
+.field {
+    width: 100%;
+    border-radius: 10px;
+    border: 1px solid var(--hairline);
+    background: color-mix(in oklab, var(--text-primary) 4%, transparent);
+    padding: 0.5rem 0.75rem;
+    font-size: 0.86rem;
+    color: var(--text-primary);
+    outline: none;
+}
+
+/* A field that cannot be typed in must not look like one that can. The
+   invitation page shows the address the account will carry, which was
+   settled when the link was issued and is here to be read, not filled
+   in; without this it differed from a live field by the mouse cursor
+   alone. */
+.field:disabled {
+    color: var(--text-secondary);
+    background: transparent;
+    cursor: default;
+}
+
+.field:focus {
+    border-color: var(--series-1);
+}
+
+/* ------------------------------------------------------------------ */
+/* Body map: organ panels, HR-zone band, focus dimming                 */
+/* ------------------------------------------------------------------ */
+.organ {
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.9rem;
+    height: 2.9rem;
+    border-radius: 12px;
+    background: color-mix(in oklab, currentColor 9%, transparent);
+}
+
+/* Selecting anything shifts focus: everything not selected steps back,
+   the selection keeps full presence. Same tonal move as the reference
+   anatomy UIs, no colour change involved. */
+.bm-dim .bm-zone:not(.bm-selected),
+.bm-dim .bm-zone-nodata:not(.bm-selected),
+.bm-dim .bm-static,
+.bm-dim .bm-marker:not(.bm-selected) {
+    opacity: 0.32;
+    transition: opacity 160ms ease;
+}
+
+/* Stepping back must never apply to whatever the keyboard is on: tabbing
+   through the map with a selection active would otherwise leave the focus
+   at a third of its contrast. */
+.bm-dim .bm-zone:focus-visible,
+.bm-dim .bm-marker:focus-visible {
+    opacity: 1;
+}
+
+.zonebar {
+    display: flex;
+    gap: 2px;
+    height: 1.35rem;
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.zonebar-seg {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 1.6rem;
+    font-size: 0.62rem;
+    font-weight: 700;
+    color: color-mix(in oklab, var(--on-accent) 85%, transparent);
+}
+
+/* ------------------------------------------------------------------
+   Body map interaction (zone selection, chips)
+   ------------------------------------------------------------------ */
+
+/* Selection reads as a contour in the text color, never as a fill
+   change: the load ramp owns the fill, the outline owns "selected".
+   paint-order puts the fill back on top of the stroke, so the contour
+   only grows outward. Without it the centered stroke eats into the
+   shape, and the muscle-fiber slivers (14px wide when rendered) lose
+   about a third of their load color to the selection. */
+.bm-zone.bm-selected polygon,
+.bm-zone-nodata.bm-selected polygon {
+    stroke: var(--text-primary);
+    stroke-width: 1.9;
+    stroke-linejoin: round;
+    paint-order: stroke fill markers;
+}
+
+/* Focus follows the marker rule: drawn on the shape, never as a box
+   around it. Chromium still paints its UA ring on plain :focus for SVG
+   elements, so pointer selection framed mostly empty map space with a
+   thick rounded box; a contour in the accent keeps keyboard focus
+   visible instead. */
+.bm-zone:focus {
+    outline: none;
+}
+
+.bm-zone:focus-visible polygon {
+    stroke: var(--series-1);
+    stroke-width: 1.4;
+}
+
+/* A marker is a group spanning the dot on the body, the leader line and the
+   caption pill beside the figure. An outline would frame that whole span,
+   which is mostly the empty gap between them. The focus is drawn on the two
+   parts that carry the meaning instead: a ring around the dot and a border
+   on the pill. The dot alone is enough below 640px, where the pill is
+   hidden and the findings list carries the captions. */
+.bm-marker:focus-visible {
+    outline: none;
+}
+
+.bm-focus-ring {
+    fill: none;
+    stroke: none;
+}
+
+.bm-marker:focus-visible .bm-focus-ring {
+    stroke: var(--series-1);
+    stroke-width: 1.4;
+}
+
+.bm-marker:focus-visible .bm-pill-bg {
+    stroke: var(--series-1);
+    stroke-width: 1.1;
+}
+
+.bm-marker:focus-visible .bm-leader {
+    stroke-width: 1;
+}
+
+.finding-row:focus-visible,
+.bm-chip:focus-visible,
+.bm-back:focus-visible {
+    outline: 2px solid var(--series-1);
+    outline-offset: 1px;
+}
+
+/* Zones without history are not controls: base strokes only, default
+   cursor, no hover response. A pointer tap still answers via the panel. */
+.bm-zone-nodata polygon {
+    stroke: var(--card);
+    stroke-width: 0.6;
+}
+
+/* Zone chips: the ranked second way into every zone (small map targets
+   on phones, keyboard path to zones without history). */
+.bm-chip {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    min-height: 2.25rem;
+    border-radius: 10px;
+    padding: 0.3rem 0.55rem;
+    background: var(--card-2);
+    cursor: pointer;
+    text-align: left;
+    transition: background 140ms ease;
+}
+
+.bm-chip:hover {
+    background: color-mix(in oklab, var(--text-primary) 10%, var(--card-2));
+}
+
+/* The list outlives the selection it triggers, so the chip has to say
+   which zone the panel above is currently showing. An inset ring rather
+   than a fill: the swatch beside it is a load colour and must keep its
+   own reading. */
+.bm-chip[aria-pressed='true'] {
+    background: color-mix(in oklab, var(--text-primary) 8%, var(--card-2));
+    box-shadow: inset 0 0 0 1.5px var(--text-primary);
+}
+
+@media (pointer: coarse) {
+    .bm-chip {
+        min-height: 2.75rem;
+    }
+}
+
+.bm-chip-swatch {
+    flex: none;
+    width: 0.85rem;
+    height: 0.85rem;
+    border-radius: 3px;
+    border: 1px solid var(--hairline);
+    background: var(--map-neutral);
+}
+
+.bm-chip-name {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.bm-chip-val {
+    flex: none;
+    font-size: 0.72rem;
+    font-weight: 650;
+    color: var(--text-secondary);
+}
+
+.bm-chip-nodata .bm-chip-name,
+.bm-chip-nodata .bm-chip-val {
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+/* Selection and hover are state changes: settle fast, or instantly
+   when the user prefers reduced motion. */
+.bm-zone polygon,
+.bm-zone-nodata polygon {
+    transition: filter 140ms ease, stroke 160ms ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .bm-zone polygon,
+    .bm-zone-nodata polygon,
+    .bm-chip {
+        transition: none;
+    }
+}
+
+/* ------------------------------------------------------------------
+   Card expand (appended 2026-07-27)
+   A card draws open in place: the toggle names its payoff, the panel
+   answers the one question the card raises but cannot answer (why the
+   score, which sessions, the sibling distances). Detail content sits
+   on the nested card-2 register the KPI tiles established, so no new
+   surface tone enters the dark-mode inversion or the light ramp.
+   Closed panels are visibility-hidden: they leave the tab order and
+   the accessibility tree while the 0fr grid row can still animate.
+   ------------------------------------------------------------------ */
+.card-expand {
+    margin-top: 0.8rem;
+}
+
+/* A quiet ghost chip, not bare muted text: an available action that
+   dresses like disabled copy never gets pressed, and the contributors
+   behind the score were never discovered that way. */
+.expand-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    border: 1px solid var(--hairline);
+    border-radius: 10px;
+    padding: 0.4rem 0.7rem;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: color 120ms ease, border-color 120ms ease;
+}
+
+.expand-toggle:hover {
+    color: var(--text-primary);
+    border-color: color-mix(in oklab, var(--text-primary) 24%, transparent);
+}
+
+.expand-toggle:focus-visible {
+    outline: 2px solid var(--series-1);
+    outline-offset: 1px;
+    border-radius: 10px;
+}
+
+.expand-chevron {
+    transition: transform 200ms ease;
+}
+
+.expand-toggle[aria-expanded='true'] .expand-chevron {
+    transform: rotate(180deg);
+}
+
+.card-detail {
+    display: grid;
+    grid-template-rows: 0fr;
+    visibility: hidden;
+    transition:
+        grid-template-rows 240ms cubic-bezier(0.22, 1, 0.36, 1),
+        visibility 240ms;
+}
+
+.card-detail.is-open {
+    grid-template-rows: 1fr;
+    visibility: visible;
+}
+
+.card-detail-inner {
+    min-height: 0;
+    overflow: hidden;
+    opacity: 0;
+    transition: opacity 200ms ease;
+}
+
+.card-detail.is-open .card-detail-inner {
+    opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .card-detail,
+    .card-detail-inner,
+    .expand-chevron {
+        transition: none;
+    }
+}
+
+.detail-block {
+    margin-top: 0.7rem;
+    border-radius: 14px;
+    background: var(--card-2);
+    padding: 0.8rem 0.9rem 0.85rem;
+}
+
+.detail-note {
+    margin-top: 0.65rem;
+    font-size: 0.72rem;
+    line-height: 1.45;
+    color: var(--text-muted);
+}
+
+/* Detail tables (sessions, intensity split): first
+   column names the row, every other column is a right-aligned number
+   per the Tabular Rule. */
+.detail-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 0.55rem;
+    font-size: 0.78rem;
+    font-variant-numeric: tabular-nums;
+}
+
+.detail-table th,
+.detail-table td {
+    padding: 0.22rem 0;
+    text-align: right;
+}
+
+.detail-table th + th,
+.detail-table td + td {
+    padding-left: 0.9rem;
+}
+
+.detail-table th:first-child,
+.detail-table td:first-child {
+    text-align: left;
+}
+
+.detail-table thead th {
+    font-size: 0.62rem;
+    font-weight: 650;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    padding-bottom: 0.3rem;
+}
+
+.detail-table td {
+    font-weight: 600;
+}
+
+.detail-table td:first-child {
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+/* Proportion under a table figure. Hours in one column can sit a
+   factor of four apart and still read as neighbours in tabular
+   numerals; the bar repeats the number as width and never replaces
+   it. Same track and data blue as the factor bars, one size down for
+   table rows, filled from the right so bar and right-aligned figure
+   grow from the same edge. */
+.cell-bar {
+    display: block;
+    margin-top: 0.25rem;
+    height: 3px;
+    border-radius: 999px;
+    background: color-mix(in oklab, var(--text-primary) 8%, transparent);
+    overflow: hidden;
+}
+
+.cell-bar i {
+    display: block;
+    height: 100%;
+    margin-left: auto;
+    border-radius: 999px;
+    background: var(--series-1);
+}
+
+/* Week separators inside the sessions table. */
+.detail-table .detail-group {
+    padding-top: 0.65rem;
+    padding-bottom: 0.15rem;
+    text-align: left;
+    font-size: 0.62rem;
+    font-weight: 750;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+}
+
+.detail-table tbody:first-of-type .detail-group {
+    padding-top: 0.25rem;
+}
+
+/* ------------------------------------------------------------------
+   Metric overlay switch (appended 2026-07-27)
+   Card-local control that lays one curated second series over a
+   chart: same segmented vocabulary as the tabs and the range switch,
+   one size down because it annotates a single plot instead of
+   steering the page. The active chip is cut from card material like
+   every other segment (darker recess in the inverted dark stack,
+   lifted white with the card shadow in light); the track mixes a
+   touch stronger than the toolbar's so the cutout stays readable on
+   the card surface. The label speaks the card label voice: 0.72rem,
+   weight 650, sentence case, muted, no tracking (see the label rule
+   above the numeric-cells block). Right-aligned above the plot, so
+   it reads as a tool of the chart, not part of the card's answer.
+   ------------------------------------------------------------------ */
+.overlay-switch {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 0.3rem 0.5rem;
+    margin-top: 0.55rem;
+}
+
+.overlay-label {
+    font-size: 0.72rem;
+    font-weight: 650;
+    color: var(--text-muted);
+}
+
+.ov-track {
+    display: flex;
+    gap: 0.2rem;
+    padding: 0.2rem;
+    border-radius: 999px;
+    background: color-mix(in oklab, var(--text-primary) 7%, transparent);
+}
+
+.ov-seg {
+    flex: none;
+    border-radius: 999px;
+    padding: 0.24rem 0.6rem;
+    font-size: 0.72rem;
+    font-weight: 600;
+    line-height: 1.2;
+    color: var(--text-secondary);
+    white-space: nowrap;
+    cursor: pointer;
+    transition: color 150ms ease, background-color 150ms ease;
+}
+
+.ov-seg:hover {
+    color: var(--text-primary);
+    background: var(--seg-hover);
+}
+
+.ov-seg:focus-visible {
+    outline: 2px solid var(--series-1);
+    outline-offset: 1px;
+}
+
+.ov-seg[aria-checked='true'] {
+    background: var(--card);
+    color: var(--text-primary);
+    box-shadow: var(--shadow-card);
+}
+
+/* An overlay without drawable points in the window says so in words
+   (the .chart-empty voice), on its own line so the control never
+   shifts sideways when the note appears. */
+.overlay-note {
+    flex: 1 0 100%;
+    text-align: right;
+    font-size: 0.72rem;
+    color: var(--text-muted);
+}
+
+/* Collapsed helper sections on /connect: the chevron replaces the UA
+   disclosure marker so the summary reads like a card title, not a
+   browser widget. */
+details.disclosure > summary {
+    list-style: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+}
+
+details.disclosure > summary::-webkit-details-marker {
+    display: none;
+}
+
+details.disclosure > summary::after {
+    content: '';
+    margin-left: auto;
+    width: 0.45rem;
+    height: 0.45rem;
+    border-right: 1.5px solid var(--text-muted);
+    border-bottom: 1.5px solid var(--text-muted);
+    transform: rotate(45deg);
+    transition: transform 0.15s;
+}
+
+details.disclosure[open] > summary::after {
+    transform: rotate(225deg);
+}
+
+/* ------------------------------------------------------------------
+   Tabular figures. Every number that sits beside a sibling or in a
+   column reads in tabular-nums, so the digits align as they change.
+   ------------------------------------------------------------------ */
+.tnum {
+    font-variant-numeric: tabular-nums;
+}
+
+/* ------------------------------------------------------------------ */
+/* Shared disclosure voice: the derivation behind a card folds away   */
+/* behind one word (stat-fold), keeping the caveat in sight and the   */
+/* story a tap away.                                                  */
+/* ------------------------------------------------------------------ */
+
+.fold {
+    margin-top: 0.6rem;
+}
+
+.fold > summary {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.32rem;
+    list-style: none;
+    cursor: pointer;
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--text-muted);
+}
+
+.fold > summary::-webkit-details-marker {
+    display: none;
+}
+
+.fold > summary::after {
+    content: '';
+    width: 0.34rem;
+    height: 0.34rem;
+    margin-top: -0.1rem;
+    border-right: 1.5px solid currentColor;
+    border-bottom: 1.5px solid currentColor;
+    transform: rotate(45deg);
+    transition: transform 0.15s;
+}
+
+.fold[open] > summary::after {
+    transform: rotate(225deg);
+    margin-top: 0.1rem;
+}
+
+.fold > summary:hover {
+    color: var(--text-secondary);
+}
+
+.fold > summary:focus-visible {
+    outline: 2px solid var(--series-1);
+    outline-offset: 2px;
+    border-radius: 3px;
+}
+
+.fold > .stat-ref {
+    margin-top: 0.35rem;
+}
+
+/* A second and third paragraph inside one fold. Several derivations that
+   belong to the same card fold behind one word rather than one each: a
+   stack of three summaries is the row of toggles the fold was there to
+   avoid. Block, not <p>, because the fold body is one .stat-ref. */
+.fold-para {
+    display: block;
+    margin-top: 0.55rem;
+}
+
+/* ==================================================================
+   MOTION (appended 2026-07-27)
+
+   THE MEASURED-MOTION RULE. Nothing on this page moves for effect.
+   Every animation here is either the page stating a value it already
+   shows (the ring drawing its arc, a spark tracing its own history, a
+   bar growing to its own height) or a control answering a press.
+
+   Grammar: exponential ease-out, cubic-bezier(0.22, 1, 0.36, 1), from
+   an already-correct default. Entrances are 300–1150 ms and happen
+   once, feedback is 120–200 ms. Nothing waits on script: every value
+   is rendered final and the animation only decides how it arrives.
+   Every entrance is gated on prefers-reduced-motion: no-preference,
+   and the feedback transitions drop out under the reduce block below.
+   ================================================================== */
+
+/* ---------------------------------------------- hero: the one moment */
+
+@media (prefers-reduced-motion: no-preference) {
+
+}
+
+/* ------------------------------------------------ data marks arriving */
+
+@media (prefers-reduced-motion: no-preference) {
+
+    /* The selected zone's freshness bar reads the same way. */
+    .bm-bar-fill {
+        transition: transform 420ms cubic-bezier(0.22, 1, 0.36, 1);
+    }
+}
+
+/* ------------------------------------------------------ press and hover */
+
+/* Feedback, not entrance: these stay under 200 ms and are the page
+   answering a finger. A press that gives nothing back is the one
+   place a dashboard feels dead. */
+.btn:active:not(:disabled) {
+    transform: scale(0.97);
+}
+
+.finding-row,
+.bm-chip {
+    transition: background 140ms ease, transform 140ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.finding-row:hover,
+.bm-chip:hover {
+    transform: translateX(2px);
+}
+
+.finding-row:active,
+.bm-chip:active {
+    transform: scale(0.985);
+}
+
+/* The refresh arrow turns while the fetch runs. Bound in the template
+   on the button's own icon, so no second element appears. */
+.icon-spin {
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: spin 900ms linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    /* The state still has to be readable without the turn. */
+    .icon-spin {
+        animation: none;
+        opacity: 0.5;
+    }
+
+    .btn,
+    .finding-row,
+    .bm-chip {
+        transition: none;
+    }
+
+    .btn:active:not(:disabled),
+    .finding-row:hover,
+    .bm-chip:hover,
+    .finding-row:active,
+    .bm-chip:active {
+        transform: none;
+    }
+}
+
+/* ------------------------------------------------------ reach and focus */
+
+/* WCAG 2.5.8 asks for 24px in both directions, and three controls sit
+   under it. The smallest is the "Ja" that deletes a card for good: 13.5
+   by 17.3. Padding would fix the target and break the line, because the
+   confirm row swaps in where the icon buttons were, so a taller row
+   would push the card head open on every confirm. The hit area grows
+   where the box does not: the same pixels on screen, a target a thumb
+   can land on. The widths stay clear of each other, the nearest gap
+   being the 8px between "Ja" and "Abbrechen". */
+
+.expand-toggle {
+    position: relative;
+}
+
+
+.expand-toggle::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: max(100%, 24px);
+    height: max(100%, 24px);
+    transform: translate(-50%, -50%);
+}
+
+/* The system marks keyboard focus with one ring, which .tab, .range-seg,
+   .ov-seg and .expand-toggle already carry. Everything listed here fell
+   through to the browser's own ring instead, so one Tab keypress drew two
+   different marks depending on where it landed. .field additionally sets
+   outline: none, which left a 1px border tint as its whole focus signal. */
+.btn:focus-visible,
+.menu-item:focus-visible,
+.field:focus-visible {
+    outline: 2px solid var(--series-1);
+    outline-offset: 1px;
+}
+
+/* The refresh button disables itself for the length of the fetch and kept
+   the pointer cursor while doing so, which is the one thing a cursor must
+   not do: promise a click the app will not answer. It stays at full
+   strength deliberately. Dimming would read as "locked" when the truth is
+   "running", and the label and turning arrow already say which. */
+.btn:disabled {
+    cursor: default;
+}
+
+/* ==================================================================
+   KINETIC TAPE ATLAS
+
+   The dashboard is one coached path: answer → action → evidence →
+   detail. The blue line is structural connective tissue, not a badge
+   applied to a conventional card wall.
+   ================================================================== */
+
+/* The container owns its frame: gutters and vertical rhythm live here
+   rather than in utility classes on the tag, so the phone block below
+   can restate them without fighting anything. */
+.app-main {
+    width: min(100%, 92rem);
+    margin-inline: auto;
+    padding: 2.25rem clamp(1rem, 3.5vw, 3.5rem);
+}
+
+.app-shell-head {
+    position: relative;
+    z-index: 30;
+    display: grid;
+    gap: 0.75rem;
+    margin-bottom: clamp(1.5rem, 3vw, 3rem);
+}
+
+.app-header {
+    margin-bottom: 0 !important;
+    min-height: 3rem;
+    border-bottom: 1px solid var(--hairline);
+    padding-bottom: 0.8rem;
+}
+
+/* The data-basis strip. Muted throughout, including the gaps: this line
+   qualifies numbers, it does not compete with them, and a page that opens
+   with an amber row about a breakfast nobody logged has spent its one
+   loud move on the least important thing on it. A gap is marked by a dot
+   before the item, which reads at a glance without taking colour. */
+.dq {
+    font-size: 0.72rem;
+    line-height: 1.4;
+    color: var(--text-muted);
+}
+
+.dq-strip {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.1rem 0.6rem;
+}
+
+.dq-label {
+    font-weight: 650;
+    color: var(--text-secondary);
+}
+
+.dq-item[data-gap]::before {
+    content: '';
+    display: inline-block;
+    width: 0.3rem;
+    height: 0.3rem;
+    margin-right: 0.3rem;
+    margin-bottom: 0.08rem;
+    border-radius: 999px;
+    background: var(--status-warning-ink);
+    vertical-align: middle;
+}
+
+.dq-fold > summary {
+    cursor: pointer;
+    list-style: none;
+}
+
+.dq-fold > summary::-webkit-details-marker {
+    display: none;
+}
+
+/* In the flow behind the facts it summarises, not parked at the far
+   edge: "1 gap" answered a click away from where the eye was reading. */
+.dq-more {
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+
+.dq-fold[open] .dq-more {
+    text-decoration: none;
+}
+
+.dq-details {
+    display: grid;
+    gap: 0.25rem;
+    margin-top: 0.4rem;
+    padding-left: 0.1rem;
+    max-width: 68ch;
+}
+
+.dq-details b {
+    font-weight: 650;
+    color: var(--text-secondary);
+}
+
+.brand-lockup {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    margin-right: clamp(0.5rem, 2vw, 1.5rem);
+    color: var(--text-primary);
+    font-size: 1rem;
+    font-weight: 800;
+    letter-spacing: -0.04em;
+}
+
+.brand-slash {
+    display: block;
+    width: 0.48rem;
+    height: 1.55rem;
+    border-radius: 3px;
+    background-color: var(--tape-blue);
+    background-image: url('../images/kinetic/blue-tape.webp');
+    background-size: auto 100%;
+    transform: skew(-16deg);
+    box-shadow: inset 0 0 0 1px color-mix(in oklab, white 12%, transparent);
+}
+
+.app-header h1 {
+    font-family: "Hybrid Display", "Arial Narrow", sans-serif;
+    font-size: clamp(1rem, 1.5vw, 1.35rem);
+    font-weight: 650;
+}
+
+.app-header > div:not(.header-actions) > p {
+    font-size: 0.72rem;
+}
+
+/* ------------------------------------------- Specialist editorial flow */
+
+.app-shell-head {
+    margin-bottom: 1.35rem;
+}
+
+.tabbar {
+    position: sticky;
+    z-index: 20;
+    top: 0;
+    padding-block: 0.75rem;
+    background: color-mix(in oklab, var(--page) 94%, transparent);
+    backdrop-filter: blur(16px);
+}
+
+.tablist,
+.range-track {
+    border-radius: var(--radius-xs);
+}
+
+.tab,
+.range-seg {
+    border-radius: 6px;
+}
+
+.panel-note,
+.panel-lede {
+    max-width: 52rem;
+    font-size: 0.78rem;
+    line-height: 1.5;
+}
+
+.card-grid {
+    gap: 0 !important;
+    border-top: 1px solid var(--hairline);
+    border-left: 1px solid var(--hairline);
+}
+
+.card-grid > .card {
+    border-width: 0 1px 1px 0;
+    border-radius: 0;
+    padding: clamp(1.1rem, 2vw, 1.65rem);
+    background: color-mix(in oklab, var(--card) 70%, transparent);
+}
+
+.card-grid > .card:first-child:has(.chart-box) {
+    grid-column: 1 / -1;
+    min-height: clamp(23rem, 48vw, 36rem);
+    background:
+        linear-gradient(110deg, color-mix(in oklab, var(--tape-blue) 7%, transparent), transparent 40%),
+        color-mix(in oklab, var(--card) 78%, transparent);
+}
+
+.card-grid > .card:first-child:has(.chart-box) .chart-box {
+    min-height: clamp(15rem, 28vw, 25rem);
+}
+
+.card-grid > .card:nth-child(4n + 4) {
+    grid-column: 1 / -1;
+}
+
+.card-title,
+.card-name {
+    font-family: "Hybrid Display", "Arial Narrow", sans-serif;
+    letter-spacing: -0.02em;
+}
+
+.kpi-row {
+    gap: 0;
+    border-top: 1px solid var(--hairline);
+}
+
+.kpi {
+    border-radius: 0;
+    background: transparent;
+}
+
+.kpi + .kpi {
+    border-left: 1px solid var(--hairline);
+}
+
+.chart-error {
+    display: grid;
+    min-height: inherit;
+    place-items: center;
+    padding: 2rem;
+    color: var(--text-secondary);
+    font-size: 0.86rem;
+    text-align: center;
+}
+
+/* ------------------------------------- Specialist answer plate (tape lead)
+
+   The plate carries an area's three parts: the answer the area exists
+   to give, the evidence rail that qualifies it and one aside holding the
+   composition the answer is made of. Written once so any area can take
+   them without a second dialect; the load area is their reader.
+
+   The plate never carries a call to act: acid lime stays reserved for a
+   single primary action where one exists. */
+
+.tape-lead {
+    position: relative;
+    isolation: isolate;
+    display: grid;
+    /* Same split as the Today container: the answer keeps the wide column,
+       the composition beside it needs a readable minimum before it wraps. */
+    grid-template-columns: minmax(0, 1.42fr) minmax(16rem, 0.62fr);
+    grid-template-areas:
+        "main aside"
+        "rail aside";
+    overflow: clip;
+    border: 1px solid var(--hairline);
+    border-radius: var(--radius-plate);
+    background-color: color-mix(in oklab, var(--card) 94%, var(--page));
+    background-image:
+        linear-gradient(color-mix(in oklab, var(--card) 68%, transparent), color-mix(in oklab, var(--card) 68%, transparent)),
+        url('../images/kinetic/graphite-textile.webp');
+    background-size: auto, 512px 512px;
+}
+
+@media (prefers-color-scheme: light) {
+    .tape-lead {
+        background-image: none;
+    }
+}
+
+.tape-lead-main {
+    grid-area: main;
+    position: relative;
+    display: grid;
+    grid-template-columns: minmax(9rem, 0.5fr) minmax(14rem, 1.2fr);
+    align-items: center;
+    gap: clamp(1.25rem, 3vw, 3rem);
+    min-width: 0;
+    padding: clamp(1.4rem, 3.4vw, 3.2rem);
+}
+
+.tape-lead .ring-col {
+    position: relative;
+}
+
+/* The tape knot: it binds the measured value to the word beside it.
+   Rounded on the end facing the reader, clipped and directional on the
+   outgoing one, so the band points at the verdict word instead of merely
+   sitting behind the instrument. */
+.tape-lead .ring-col::before {
+    content: "";
+    position: absolute;
+    z-index: -1;
+    inset: 29% -1.4rem 29% 17%;
+    background-color: var(--tape-blue);
+    background-image:
+        linear-gradient(90deg, rgba(255, 255, 255, 0.04), transparent 28%, rgba(0, 0, 0, 0.12)),
+        url('../images/kinetic/blue-tape.webp');
+    background-position: center;
+    background-size: auto, auto 100%;
+    border-radius: 999px 0 0 999px;
+    clip-path: polygon(0 0, 100% 0, calc(100% - 1.05rem) 100%, 0 100%);
+    opacity: var(--tape-veil);
+    transform: rotate(-2deg);
+}
+
+.tape-lead-eyebrow {
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    line-height: 1.35;
+    text-transform: uppercase;
+    color: var(--text-muted);
+}
+
+/* pretty, not balance: the line under the verdict is a sentence and keeps
+   its natural break, it only refuses to leave an orphan behind. */
+.tape-lead-meta {
+    max-width: 34rem;
+    margin-top: 0.7rem;
+    color: var(--text-secondary);
+    font-size: clamp(1rem, 1.65vw, 1.35rem);
+    line-height: 1.42;
+    text-wrap: pretty;
+}
+
+/* The method limit belongs to the answer, so it stays on the plate rather
+   than moving to a footer that would teach the reader to look for caveats
+   at the bottom of the page instead of at the number. */
+.tape-lead-note {
+    max-width: 62ch;
+    margin-top: 1.1rem;
+    color: var(--text-muted);
+    font-size: 0.72rem;
+    line-height: 1.45;
+}
+
+.tape-lead-aside {
+    grid-area: aside;
+    display: grid;
+    align-content: center;
+    min-width: 0;
+    border-left: 1px solid var(--hairline);
+    padding: clamp(1.4rem, 2.8vw, 2.6rem);
+    background:
+        linear-gradient(180deg, color-mix(in oklab, var(--tape-blue) 7%, transparent), transparent 42%),
+        color-mix(in oklab, var(--card) 88%, transparent);
+}
+
+/* The evidence rail. Cells divided by hairlines rather than gaps, so
+   related figures read as one instrument plate and not as a tray of
+   widgets. --tape-rail-cols is the only thing a caller sets. */
+.tape-rail {
+    grid-area: rail;
+    display: grid;
+    grid-template-columns: repeat(var(--tape-rail-cols, 3), minmax(0, 1fr));
+    border-top: 1px solid var(--hairline);
+}
+
+.tape-rail-cell {
+    display: grid;
+    align-content: center;
+    gap: 0.45rem;
+    min-width: 0;
+    border-right: 1px solid var(--hairline);
+    padding: clamp(1rem, 2vw, 1.6rem);
+    background: color-mix(in oklab, var(--card-2) 52%, transparent);
+}
+
+.tape-rail-cell:last-child {
+    border-right: 0;
+}
+
+.tape-rail-label {
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    line-height: 1.35;
+    text-transform: uppercase;
+    color: var(--text-muted);
+}
+
+.tape-rail-value {
+    font-family: "Hybrid Display", "Arial Narrow", sans-serif;
+    font-size: clamp(1.55rem, 2.4vw, 2rem);
+    font-weight: 700;
+    letter-spacing: -0.045em;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+}
+
+/* The condensed face closes tightly, so the unit needs the space the
+   letterforms do not leave: without it the rail read "6:03h". */
+.tape-rail-value .stat-unit {
+    margin-left: 0.3em;
+}
+
+/* A figure the mirror does not hold is still an answer, but it is not the
+   one the cell was built to shout. It keeps its place and drops its voice. */
+.tape-rail-value[data-empty] {
+    color: var(--text-muted);
+}
+
+/* ------------------------------------------------------- Training surface
+
+   Training answers with a ratio on a fixed 0-2 scale, not with a score out
+   of a hundred, so its plate carries the gauge the surface already draws
+   instead of the sleep plate's ring: a ring would promise a share of a
+   hundred and put 1.1 a twentieth of the way round. Everything else on the
+   plate is the shared vocabulary above, unchanged. */
+
+.tape-lead-gauge .gauge {
+    margin-top: 0;
+}
+
+/* The reading steps out from under the arc. Inside it, the figure sits at
+   exactly the height a needle reaches at 0 and at 2, which are the two
+   ends of this scale and both horizontal: taping the figure there would
+   put coral on electric blue the moment the ratio ran off either end.
+   Below the drawing the band carries the reading alone and the needle
+   keeps the plate's ground, and its status ink, at every value. */
+.tape-lead-gauge .gauge-read {
+    position: static;
+    margin-top: 0.7rem;
+}
+
+/* The scale's name is a flex item of the column, so it shrinks to its own
+   text and follows the column's alignment rather than the drawing's.
+   Stretching it puts it back under the middle of the arc at both widths. */
+.tape-lead-gauge .gauge-word {
+    align-self: stretch;
+}
+
+/* The knot keeps the job it has everywhere: it binds the measured number
+   to the word beside it. The gauge reads at the foot of its drawing rather
+   than in the middle of a circle, so the band lies under the reading and
+   runs out towards the verdict from there. Arc, ticks and needle stay off
+   the band, which is what lets the needle keep the status ink it carries
+   in the answer zone as well. */
+.tape-lead.tape-lead-gauge .ring-col::before {
+    inset: auto -1.4rem 0.1rem 12%;
+    height: 3.5rem;
+    /* Half the tilt the ring's knot carries. This band is three times as
+       wide and lies flat under the arc, so the shared angle lifted its far
+       corner into the drawing, exactly where the needle stands at 2.0. */
+    transform: rotate(-1deg);
+}
+
+/* On the band the value cannot keep its status ink: coral and the tape are
+   both saturated, and the pair fails contrast either way round. The state
+   is not lost with it: the corridor's word stands beside the number at
+   display size, and the needle still carries the ink on the scale. The
+   scale's name lies on the band too and takes the same colour: muted grey
+   over electric blue is the one combination this palette must never make. */
+.tape-lead.tape-lead-gauge .gauge-read .stat-value,
+.tape-lead.tape-lead-gauge .gauge-word {
+    color: var(--on-tape);
+}
+
+/* The two loads the ratio is made of, in the plate's aside. Both bars are
+   scaled to the larger figure, so the pair draws the same ratio the gauge
+   points at. */
+.load-split {
+    display: grid;
+    gap: 0.7rem;
+    margin-top: 0.6rem;
+}
+
+.load-split-row {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 0.15rem 0.9rem;
+    align-items: baseline;
+    font-size: 0.78rem;
+    color: var(--text-secondary);
+}
+
+.load-split-row > dd {
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.load-split-row > .cell-bar {
+    grid-column: 1 / -1;
+    margin-top: 0.15rem;
+}
+
+/* The table bars fill from the right because they hang under a right-set
+   figure. These two are read against each other, so they start from the
+   common left edge instead. */
+.load-split-row > .cell-bar i {
+    margin-left: 0;
+}
+
+/* ------------------------------------------------------- Responsive shell
+
+   The shell below full width: main gutter, header stack, nav chips and
+   the plates falling into one column. */
+@media (max-width: 900px) {
+    .app-main {
+        padding-inline: 1rem !important;
+    }
+
+    .app-header {
+        align-items: flex-start;
+    }
+
+    .brand-lockup {
+        width: 100%;
+    }
+
+    .tape-lead {
+        grid-template-columns: 1fr;
+        grid-template-areas:
+            "main"
+            "rail"
+            "aside";
+    }
+
+    .tape-lead-main {
+        grid-template-columns: minmax(8rem, 0.45fr) minmax(13rem, 1fr);
+    }
+
+    .tape-lead-aside {
+        border-top: 1px solid var(--hairline);
+        border-left: 0;
+    }
+}
+
+@media (max-width: 640px) {
+    body.viz-root {
+        background-image: none;
+    }
+
+    .app-main {
+        padding-top: 0.8rem;
+        padding-bottom: 5.5rem;
+    }
+
+    .app-shell-head {
+        margin-bottom: 1rem;
+    }
+
+    .app-header {
+        gap: 0.75rem;
+    }
+
+    .app-header > div:not(.header-actions) {
+        flex: 1;
+    }
+
+    .header-actions {
+        gap: 0.35rem;
+    }
+
+    .tape-headline {
+        font-size: clamp(2.8rem, 17vw, 5rem);
+    }
+
+    .tape-lead {
+        border-radius: 1.25rem;
+    }
+
+    .tape-lead-main {
+        grid-template-columns: 1fr;
+        gap: 0.75rem;
+        padding: 1.2rem;
+    }
+
+    /* One column means the verdict sits below the score, not beside it, so
+       the band has nothing to point at sideways. It becomes what it is on a
+       phone: a strip running in from off the edge with the score taped onto
+       it and the cut end aiming at the word underneath. */
+    .tape-lead .ring-col {
+        align-items: flex-start;
+    }
+
+    .tape-lead .ring-col::before {
+        inset: 30% 0.6rem 30% -2.4rem;
+    }
+
+    /* Same move for the gauge: the strip runs in from off the left edge and
+       its cut end aims down at the verdict, which on a phone sits under the
+       instrument rather than beside it. The drawing takes the whole column
+       so its reading stays over the middle of the band. */
+    .tape-lead-gauge .gauge {
+        max-width: none;
+    }
+
+    .tape-lead.tape-lead-gauge .ring-col::before {
+        inset: auto 1.6rem 0.1rem -2.4rem;
+    }
+
+    /* Four cells in one row do not fit 390 px, and four stacked rows push
+       everything below the fold. Two columns is the readable middle; an odd
+       last cell takes the full width instead of leaving a half-empty row. */
+    .tape-rail {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .tape-rail-cell {
+        border-bottom: 1px solid var(--hairline);
+    }
+
+    .tape-rail-cell:nth-child(2n),
+    .tape-rail-cell:last-child:nth-child(odd) {
+        border-right: 0;
+    }
+
+    .tape-rail-cell:last-child:nth-child(odd) {
+        grid-column: 1 / -1;
+    }
+
+    /* The rail already closed the block with a hairline; a second one over
+       the aside would read as a double rule. */
+    .tape-lead-aside {
+        border-top: 0;
+        padding: 1.2rem;
+    }
+
+    .tabbar {
+        position: static;
+        padding-top: 0;
+    }
+
+    .card-grid {
+        display: block;
+    }
+
+    .card-grid > .card {
+        min-height: 0;
+        border-bottom: 1px solid var(--hairline);
+    }
+
+    .card-grid > .card:first-child:has(.chart-box) .chart-box {
+        min-height: 15rem;
+    }
+}
+
+/* The band gets no entrance: an animated transform on the pseudo forces
+   it into its own compositing layer, which Chrome then paints beneath
+   the evidence cells. The ring draw and the week sweep stay the page's
+   one authored moment; the tape is simply already in place. */
+
+/* ------------------------------------------------------------------
+   Body map, second level (appended 2026-08-02)
+
+   Four things arrive here, each on its own channel so the blue load
+   ramp keeps meaning exactly one thing:
+
+   - depth, from a single light over the silhouette rather than from
+     per-zone gradients that would each need to know their own colour
+   - a lens control, because freshness and accumulated volume are two
+     different readings and the colour has to say which one is on
+   - an outline for zones that need a decision today, and a marker
+     where a symptom was reported
+   - the link between the figure and the ranking below it, so pointing
+     at a zone in one lights it up in the other
+
+   Everything stays inside the graphite/paper register: no glow, no
+   pulse, no colour that is not already a token.
+   ------------------------------------------------------------------ */
+
+/* ---------------------------------------------------- the reading */
+.bm-story {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.1rem 0.6rem;
+    padding: 0.55rem 0.9rem 0.6rem;
+    border-left: 2px solid var(--series-1);
+    border-radius: 0 var(--radius-xs) var(--radius-xs) 0;
+    background: var(--card-2);
+}
+
+.bm-story[data-tone='ready'] {
+    border-left-color: var(--action, #d8ff3f);
+}
+
+.bm-story-lead {
+    font-family: var(--font-display, inherit);
+    font-size: 1.05rem;
+    font-weight: 700;
+    letter-spacing: -0.012em;
+    color: var(--text-primary);
+}
+
+.bm-story-follow {
+    font-size: 0.86rem;
+    color: var(--text-secondary);
+}
+
+/* ------------------------------------------------------ lens control */
+.lens {
+    display: inline-flex;
+    gap: 1px;
+    padding: 2px;
+    border: 1px solid var(--hairline);
+    border-radius: var(--radius-xs);
+    background: var(--card-2);
+}
+
+.lens-btn {
+    padding: 0.2rem 0.5rem;
+    border-radius: calc(var(--radius-xs) - 3px);
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    color: var(--text-muted);
+    white-space: nowrap;
+    cursor: pointer;
+    transition: background 140ms ease, color 140ms ease;
+}
+
+.lens-btn:hover {
+    color: var(--text-secondary);
+}
+
+.lens-btn[aria-pressed='true'] {
+    background: var(--series-1);
+    color: var(--on-accent, #f3f0e8);
+}
+
+.lens-btn:focus-visible {
+    outline: 2px solid var(--series-1);
+    outline-offset: 1px;
+}
+
+/* -------------------------------------------------------- the figure */
+/* The light, blended rather than painted: soft-light lifts the lit side
+   and sinks the far one without changing the hue the ramp assigned. */
+.bm-shade {
+    mix-blend-mode: soft-light;
+    pointer-events: none;
+}
+
+/* Seams between muscles. A hair darker than the card in graphite, a hair
+   lighter in paper, which is what makes the zones read as separate
+   bodies instead of as one flat painted surface. */
+.bm-zone polygon,
+.bm-zone-nodata polygon,
+.bm-static polygon {
+    stroke: var(--map-seam);
+    stroke-width: 0.5;
+    stroke-linejoin: round;
+}
+
+/* Small zones (forearms, calves, rear delts) fall under the 44 pt the
+   touch guidance asks for. The stroke is transparent and pointer-events
+   count it, so every zone grows a hit area without growing on screen. */
+.bm-zone,
+.bm-zone-nodata {
+    pointer-events: all;
+}
+
+.bm-zone polygon,
+.bm-zone-nodata polygon {
+    paint-order: stroke fill;
+}
+
+@media (pointer: coarse) {
+    .bm-zone polygon,
+    .bm-zone-nodata polygon {
+        stroke-width: 1.6;
+    }
+}
+
+/* Pointing at a zone anywhere lights it up everywhere: the figure and
+   the ranking are two views of one list. */
+.bm-zone.bm-lit polygon,
+.bm-zone-nodata.bm-lit polygon {
+    stroke: var(--text-primary);
+    stroke-width: 0.9;
+}
+
+.bm-chip-lit {
+    border-color: var(--text-muted);
+    background: var(--card-2);
+}
+
+/* Second channel: an outline, never a second fill colour. Drawn over the
+   shading so the light cannot wash it out. */
+.bm-flag {
+    pointer-events: none;
+}
+
+.bm-flag polygon {
+    fill: none;
+    stroke: var(--map-flag);
+    stroke-width: 1.1;
+    stroke-linejoin: round;
+}
+
+/* A reported complaint is what the athlete felt, not what the model
+   computed, so it gets a mark of its own beside the load. */
+.bm-symptom {
+    cursor: pointer;
+}
+
+.bm-symptom-dot {
+    fill: var(--map-symptom);
+    stroke: var(--map-symptom-ink);
+    stroke-width: 0.7;
+}
+
+.bm-symptom-mark {
+    stroke: var(--map-symptom-ink);
+    stroke-width: 1.1;
+    stroke-linecap: round;
+}
+
+.bm-symptom[data-severity='3'] .bm-symptom-dot {
+    r: 5.6;
+}
+
+/* One authored moment when the card first paints: the fills run in like
+   ink, then stop. Not a loop, and not a pulse on loaded zones, which
+   would turn a reading into an alarm. */
+@keyframes bm-ink-bloom {
+    from {
+        opacity: 0.15;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+.bm-fig .bm-zone polygon,
+.bm-fig .bm-zone-nodata polygon {
+    animation: bm-ink-bloom 620ms ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .bm-fig .bm-zone polygon,
+    .bm-fig .bm-zone-nodata polygon {
+        animation: none;
+    }
+
+    .lens-btn {
+        transition: none;
+    }
+}
+
+/* ------------------------------------------------- zone detail rows */
+.bm-forecast {
+    padding: 0.5rem 0.7rem;
+    border-radius: var(--radius-xs);
+    background: var(--card-2);
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+}
+
+.bm-forecast strong {
+    color: var(--text-primary);
+}
+
+/* How much of a zone's reading was measured rather than estimated. The
+   single largest way this map could mislead, so it is stated in words
+   and not left to a subtle tint. */
+.bm-quality {
+    padding: 0.45rem 0.7rem;
+    border-left: 2px solid var(--hairline);
+    font-size: 0.84rem;
+    line-height: 1.45;
+    color: var(--text-secondary);
+}
+
+.bm-quality[data-quality='estimated'] {
+    border-left-color: var(--map-flag);
+}
+
+.bm-sessions {
+    display: grid;
+    gap: 0.3rem;
+    font-size: 0.86rem;
+}
+
+.bm-sessions li {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    gap: 0.6rem;
+    align-items: baseline;
+}
+
+.bm-session-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--text-primary);
+}
+
+.bm-symptom-note {
+    padding: 0.45rem 0.7rem;
+    border-left: 2px solid var(--map-symptom);
+    font-size: 0.88rem;
+    color: var(--text-secondary);
+}
+
+.bm-chip-sym {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 0.95rem;
+    height: 0.95rem;
+    border-radius: 50%;
+    background: var(--map-symptom);
+    color: var(--map-symptom-ink);
+    font-size: 0.62rem;
+    font-weight: 800;
+}
+
+.bm-chip[data-flagged='true'] .bm-chip-swatch {
+    box-shadow: 0 0 0 1.5px var(--map-flag);
+}
+
+.legend-flagged {
+    background: transparent;
+    box-shadow: inset 0 0 0 1.5px var(--map-flag);
+}
+
+.legend-symptom {
+    background: var(--map-symptom);
+    box-shadow: inset 0 0 0 1px var(--map-symptom-ink);
+}
+
+/* The solid's stage. Same height as the flat figures so switching between
+   the two readings does not move the page under the reader. */
+.bm-stage {
+    position: relative;
+    height: 380px;
+    border-radius: var(--radius-xs);
+    background: radial-gradient(120% 90% at 50% 12%, var(--card-2) 0%, var(--card) 72%);
+    touch-action: pan-y;
+    cursor: grab;
+}
+
+.bm-stage:active {
+    cursor: grabbing;
+}
+
+.bm-stage canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+
+/* Until the model is in, the stage is empty on purpose: no spinner for
+   what is a 63 kB fetch on a warm connection. */
+.bm-stage:not([data-ready]) {
+    opacity: 0;
+}
+
+.bm-stage[data-ready] {
+    opacity: 1;
+    transition: opacity 260ms ease;
+}
+
+@media (min-width: 640px) {
+    .bm-stage {
+        height: 460px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .bm-stage[data-ready] {
+        transition: none;
+    }
+}
+
+.lens-solid {
+    margin-left: 0.35rem;
+    border: 1px solid var(--hairline);
+}
+
+/* ==================================================================
+   The guide: what "/" shows before anybody has signed in.
+
+   It borrows the answer plate's surface (the plate corner, the textile
+   ground, the hairline-divided rail) without borrowing its instrument.
+   There is no measured value on this page, so the rail names what the
+   dashboard reads instead of shouting a figure nobody has fetched yet:
+   a plate that opened with an invented number would break the one rule
+   the real plates keep.
+
+   The four steps are the Tape Trail proper. One band runs from station
+   to station and every segment starts and ends on a mark, so no end of
+   the tape floats where the copy happens to stop.
+   ================================================================== */
+
+.guide-plate {
+    overflow: clip;
+    border: 1px solid var(--hairline);
+    border-radius: var(--radius-plate);
+    background-color: color-mix(in oklab, var(--card) 94%, var(--page));
+    background-image:
+        linear-gradient(color-mix(in oklab, var(--card) 68%, transparent), color-mix(in oklab, var(--card) 68%, transparent)),
+        url('../images/kinetic/graphite-textile.webp');
+    background-size: auto, 512px 512px;
+}
+
+@media (prefers-color-scheme: light) {
+    .guide-plate {
+        background-image: none;
+    }
+}
+
+.guide-plate-main {
+    padding: clamp(1.5rem, 4vw, 3.2rem);
+}
+
+.guide-eyebrow {
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    line-height: 1.35;
+    text-transform: uppercase;
+    color: var(--text-muted);
+}
+
+/* The page's answer, and the only place on it that shouts. Condensed,
+   capped well under the display scale's ceiling: this is a page title,
+   not the verdict hero the focus cut retired. */
+.guide-answer {
+    /* Two lines at every width the plate has, which is what keeps the
+       evidence rail under it inside the first screen. */
+    max-width: 23ch;
+    margin-top: 0.85rem;
+    font-family: "Hybrid Display", "Arial Narrow", sans-serif;
+    font-size: clamp(2.6rem, 4.6vw, 4.2rem);
+    font-weight: 700;
+    letter-spacing: -0.05em;
+    line-height: 0.92;
+    text-wrap: balance;
+}
+
+.guide-lede {
+    max-width: 54ch;
+    margin-top: 1.1rem;
+    color: var(--text-secondary);
+    font-size: clamp(1rem, 1.5vw, 1.2rem);
+    line-height: 1.5;
+    text-wrap: pretty;
+}
+
+/* The one action on the page, at the height the system asks of a
+   primary. Same blue and same corner as every other primary here: the
+   sign-in one click further on is the same button, and two colours for
+   one action would read as two different doors. */
+.guide-action {
+    gap: 0.55rem;
+    margin-top: clamp(1.3rem, 3vw, 1.9rem);
+    min-height: 48px;
+    padding: 0.7rem 1.15rem;
+    font-size: 0.95rem;
+}
+
+.guide-rail {
+    position: relative;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    border-top: 1px solid var(--hairline);
+}
+
+/* The band that binds the answer to its evidence. It lies half over the
+   seam between the two, the way tape binds two plates, and both of its
+   ends land on geometry that holds still: the plate's edge on one side,
+   the rail's first divider on the other, where the clipped diagonal
+   points at the cell that follows. */
+.guide-rail::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: -0.21rem;
+    width: calc(100% / 3);
+    height: 0.42rem;
+    background-color: var(--tape-blue);
+    background-image: url('../images/kinetic/blue-tape.webp');
+    background-position: center;
+    background-size: auto 100%;
+    clip-path: polygon(0 0, 100% 0, calc(100% - 0.5rem) 100%, 0 100%);
+    opacity: var(--tape-veil);
+}
+
+.guide-rail-cell {
+    display: grid;
+    align-content: start;
+    gap: 0.45rem;
+    min-width: 0;
+    border-right: 1px solid var(--hairline);
+    padding: clamp(1rem, 2vw, 1.5rem);
+    background: color-mix(in oklab, var(--card-2) 52%, transparent);
+}
+
+.guide-rail-cell:last-child {
+    border-right: 0;
+}
+
+.guide-rail-label {
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    line-height: 1.35;
+    text-transform: uppercase;
+    color: var(--text-muted);
+}
+
+.guide-rail-note {
+    color: var(--text-secondary);
+    font-size: 0.86rem;
+    line-height: 1.45;
+    text-wrap: pretty;
+}
+
+@media (max-width: 640px) {
+    .guide-rail {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    /* One column, so there is no divider a third of the way across for
+       the band to end on. It takes the whole seam instead, edge to edge,
+       and keeps both ends on the plate. */
+    .guide-rail::before {
+        width: 100%;
+        clip-path: none;
+    }
+
+    .guide-rail-cell {
+        border-right: 0;
+        border-bottom: 1px solid var(--hairline);
+    }
+
+    .guide-rail-cell:last-child {
+        border-bottom: 0;
+    }
+}
+
+/* The steps and their name, side by side where there is room for it.
+   The label keeps a column of its own rather than sitting on top of the
+   trail: the plate above runs the full width, so a section that started
+   again at the left margin under it read as a second page. */
+.guide-how {
+    --guide-mark: 1.9rem;
+    --guide-step-pad: clamp(1rem, 2.2vw, 1.45rem);
+    display: grid;
+    margin-top: clamp(1.8rem, 4vw, 2.8rem);
+}
+
+/* Two columns only where there is a label to stand in the first one.
+   A section that runs the trail on its own, as the setup page does,
+   would otherwise put it in the narrow column meant for the heading
+   and wrap every line after three words. Asked of the markup rather
+   than of a modifier class, so a page that later drops or gains its
+   label is laid out for what it is. */
+@media (min-width: 900px) {
+    .guide-how:has(> .guide-section-label) {
+        grid-template-columns: minmax(0, 1fr) minmax(0, 2.6fr);
+        column-gap: clamp(1.5rem, 4vw, 3rem);
+    }
+}
+
+/* Level with the first station's name rather than with the top of its
+   row, which is where the tape starts. */
+.guide-section-label {
+    padding-top: calc(var(--guide-step-pad) + 0.4rem);
+    padding-bottom: 0.2rem;
+}
+
+.guide-trail {
+    display: grid;
+    list-style: none;
+}
+
+.guide-step {
+    position: relative;
+    display: grid;
+    grid-template-columns: var(--guide-mark) minmax(0, 1fr);
+    column-gap: clamp(0.9rem, 2.2vw, 1.4rem);
+    padding-block: var(--guide-step-pad);
+}
+
+/* The segment between this station and the next: it leaves this mark's
+   centre and reaches into the following row by exactly that row's top
+   padding plus half its mark, which is the next mark's centre. */
+.guide-step::before {
+    content: "";
+    position: absolute;
+    top: calc(var(--guide-step-pad) + var(--guide-mark) / 2);
+    bottom: calc(-1 * (var(--guide-step-pad) + var(--guide-mark) / 2));
+    left: calc(var(--guide-mark) / 2 - 0.21rem);
+    width: 0.42rem;
+    background-color: var(--tape-blue);
+    background-image: url('../images/kinetic/blue-tape.webp');
+    background-position: center;
+    background-size: 100% auto;
+    opacity: var(--tape-veil);
+}
+
+/* The trail ends on the last mark rather than running past it. */
+.guide-step:last-child::before {
+    content: none;
+}
+
+/* Positioned, so it paints over the band that starts underneath it:
+   an absolutely positioned pseudo-element otherwise covers the number
+   an in-flow mark has drawn. */
+.guide-step-mark {
+    position: relative;
+    display: grid;
+    place-items: center;
+    width: var(--guide-mark);
+    height: var(--guide-mark);
+    border-radius: 999px;
+    background-color: var(--tape-blue);
+    background-image: url('../images/kinetic/blue-tape.webp');
+    background-position: center;
+    background-size: auto 100%;
+    color: var(--on-tape);
+    font-family: "Hybrid Display", "Arial Narrow", sans-serif;
+    font-size: 0.95rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+}
+
+.guide-step-name {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.6rem;
+    padding-top: 0.15rem;
+    font-family: "Hybrid Display", "Arial Narrow", sans-serif;
+    font-size: clamp(1.2rem, 1.9vw, 1.5rem);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1.05;
+}
+
+/* The word rides beside a condensed heading, so it keeps the body face
+   and the label step rather than inheriting the shout. */
+.guide-step-pill {
+    font-family: "Hybrid Text", "Avenir Next", Avenir, "Helvetica Neue", system-ui, sans-serif;
+    letter-spacing: 0.04em;
+}
+
+/* No dot: the leading dot on a pill announces a state, and "optional" is
+   not one. It qualifies the step, so it is a tag and looks like one. */
+.guide-step-pill::before {
+    content: none;
+}
+
+.guide-step-body {
+    max-width: 64ch;
+    margin-top: 0.5rem;
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+    line-height: 1.55;
+    text-wrap: pretty;
+}
+
+/* The rule runs the width of the page, the copy keeps its measure: a
+   hairline that stopped where the sentence does read as a broken border
+   rather than as the line under everything above it. */
+.guide-note {
+    margin-top: clamp(1.6rem, 4vw, 2.4rem);
+    padding-top: clamp(1.1rem, 2.5vw, 1.5rem);
+    border-top: 1px solid var(--hairline);
+    color: var(--text-muted);
+    font-size: 0.78rem;
+    line-height: 1.55;
+}
+
+.guide-note p {
+    max-width: 76ch;
+}

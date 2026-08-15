@@ -1,0 +1,47 @@
+# The web server inside the image. Kept here rather than using the base
+# image's own file, so that upgrading FrankenPHP cannot quietly change how
+# this application is served.
+
+{
+	{$CADDY_GLOBAL_OPTIONS}
+
+	frankenphp {
+		{$FRANKENPHP_CONFIG}
+	}
+}
+
+# SERVER_NAME defaults to :80 in the Dockerfile, which is an address without
+# a host name, and Caddy leaves TLS alone for those. Set it to a real host
+# name only where this container is the thing on the internet, not where a
+# platform's router already holds the certificate.
+{$SERVER_NAME::80} {
+	root /app/public
+
+	# zstd and gzip only: brotli needs a Caddy plugin that this build does
+	# not carry, and naming it would fail the config, not skip it.
+	encode zstd gzip
+
+	# Vite writes a content hash into every file name under assets/, so a
+	# changed file is a different URL and the old one can never be wrong.
+	# Without this header the browser holds no copy it trusts and asks about
+	# each of them on every page view: the answer is a 304 with no body, but
+	# the question still costs a full round trip to wherever this container
+	# runs. That is the difference between a fast response and a page that
+	# feels slow after the response has already arrived.
+	@immutable path /build/assets/*
+	header @immutable Cache-Control "public, max-age=31536000, immutable"
+
+	# The icons and the manifest keep their names across deploys, so they get
+	# a day rather than a year: long enough to stay out of the way, short
+	# enough that a replaced icon appears without anyone clearing a cache.
+	@static path /favicon.ico /favicon.svg /apple-touch-icon.png /manifest.webmanifest /robots.txt
+	header @static Cache-Control "public, max-age=86400"
+
+	# The service worker is the one file that must never be held: it is how a
+	# client learns that anything else has changed.
+	header /sw.js Cache-Control "no-cache"
+
+	# Every path that is not a file on disk becomes index.php, which is what
+	# a single front controller needs.
+	php_server
+}

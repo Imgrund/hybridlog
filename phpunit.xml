@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="vendor/phpunit/phpunit/phpunit.xsd"
+         bootstrap="vendor/autoload.php"
+         colors="true"
+>
+    <testsuites>
+        <testsuite name="Unit">
+            <directory>tests/Unit</directory>
+        </testsuite>
+        <testsuite name="Feature">
+            <directory>tests/Feature</directory>
+        </testsuite>
+    </testsuites>
+    <source>
+        <include>
+            <directory>app</directory>
+        </include>
+    </source>
+    <php>
+        <env name="APP_ENV" value="testing"/>
+        <env name="APP_MAINTENANCE_DRIVER" value="file"/>
+        <env name="APP_URL" value="http://localhost" force="true"/>
+        <env name="BCRYPT_ROUNDS" value="4"/>
+        <env name="BROADCAST_CONNECTION" value="null"/>
+        <env name="CACHE_STORE" value="array"/>
+        <!--
+            Tests run on Postgres, not on an in-memory SQLite, because the
+            mirror is where SQL dialect decides behaviour: the MCP server
+            executes model-written SQL against it, dashboard cards store SQL
+            verbatim, and DescribeSchemaTool introspects it. A suite that is
+            green on a more forgiving engine than production would be worse
+            than no suite at all here.
+
+            Host, user and password come from the environment, so this file
+            works unchanged on a laptop and in CI. The empty values below are
+            defaults that a set variable overrides (phpunit does not overwrite
+            an existing one), and empty means "let libpq decide": on a laptop
+            that is the operating system account, in CI whatever PGUSER says.
+            Both connections run as the same role here, because the tests own
+            the schema they build.
+
+            Create the database once: createdb garmin_test
+        -->
+        <env name="DB_CONNECTION" value="pgsql"/>
+        <env name="DB_DATABASE" value="garmin_test"/>
+        <env name="DB_URL" value=""/>
+        <!--
+            Both connections fall back to DATABASE_URL when their own URL is
+            empty, which is what makes one platform-provided variable enough.
+            Emptied here as well, so that a shell which happens to carry a
+            DATABASE_URL cannot point the suite at a real database and let it
+            run migrations there.
+        -->
+        <env name="DATABASE_URL" value="" force="true"/>
+        <env name="DB_USERNAME" value=""/>
+        <env name="DB_PASSWORD" value=""/>
+        <env name="GARMIN_DB_URL" value=""/>
+        <env name="GARMIN_DB_DATABASE" value="garmin_test"/>
+        <env name="GARMIN_DB_USERNAME" value=""/>
+        <env name="GARMIN_DB_PASSWORD" value=""/>
+        <!--
+            No test may spend real seconds inside the refresh tool's wait
+            loop; the tests that are about waiting seed the row the loop
+            looks for and assert on the very first pass.
+        -->
+        <env name="GARMIN_FETCH_WAIT_SECONDS" value="0"/>
+        <!--
+            No suite run may start the real fetcher. The queue is sync here,
+            so anything that dispatches RunGarminFetch runs it in-process,
+            and the first sign-in of an athlete does exactly that: it starts
+            a ninety-day backfill (App\Garmin\GarminLogin::fillTheNewMirror).
+            With the fetcher's default command that is a real conversation
+            with Garmin Connect, and the DSN below is why it was not merely
+            slow: fetch.py reads its connection from the environment it
+            inherits, so a .env with a real GARMIN_FETCH_DSN had the suite
+            writing months of live data into the developer's own mirror.
+
+            Both are forced rather than defaulted. A laptop's .env carries
+            values for both, and a value that a shell already holds is one
+            an unforced <env> leaves alone - which is the whole failure.
+            CI never saw it: there is no virtualenv on the runner, so the
+            command died instantly and the test moved on.
+
+            Tests that are about the fetcher set garmin.fetch.command
+            themselves, to a stub whose output they assert on.
+        -->
+        <env name="GARMIN_FETCH_COMMAND" value="/usr/bin/true" force="true"/>
+        <env name="GARMIN_LOGIN_COMMAND" value="/usr/bin/true" force="true"/>
+        <env name="GARMIN_FETCH_DSN" value="" force="true"/>
+        <!--
+            The suite's own reader roles. Schemas belong to a database and
+            garmin_test's cannot touch anybody else's, but roles belong to
+            the whole cluster: on a laptop running the real installation
+            beside the suite, the sweep in tests/Concerns/CreatesMirrorSchema
+            drops every role matching this prefix, and with the default it
+            would drop the role the dashboard reads through. Its own prefix
+            keeps the suite inside its own database in the one respect where
+            a database is not a boundary.
+        -->
+        <env name="GARMIN_READER_ROLE_PREFIX" value="garmin_suite_reader_t" force="true"/>
+        <!-- Never let a suite run push water to Garmin Connect; tests that
+             exercise the push enable it themselves and fake the process. -->
+        <!--
+            The timezone the mirror's local timestamps live in. Forced, so
+            the suite computes "today" the same way on a laptop with a
+            Berlin .env and on a CI runner with no .env at all - the
+            difference is exactly the kind of after-22:00-UTC flake that
+            passes review and then fails on main.
+        -->
+        <env name="APP_TIMEZONE" value="Europe/Berlin" force="true"/>
+        <env name="MAIL_MAILER" value="array"/>
+        <env name="QUEUE_CONNECTION" value="sync"/>
+        <env name="SESSION_DRIVER" value="array"/>
+        <env name="PULSE_ENABLED" value="false"/>
+        <env name="TELESCOPE_ENABLED" value="false"/>
+        <env name="NIGHTWATCH_ENABLED" value="false"/>
+    </php>
+</phpunit>

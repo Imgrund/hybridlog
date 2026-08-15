@@ -1,0 +1,40 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.imgrund/hybridlog",
+  "title": "hybridlog",
+  "description": "Reads your own Garmin mirror: readiness, training load, muscle freshness, and read-only SQL.",
+  "version": "0.1.0",
+  "websiteUrl": "https://github.com/Imgrund/hybridlog#connect-an-ai",
+  "repository": {
+    "url": "https://github.com/Imgrund/hybridlog",
+    "source": "github",
+    "id": "1334329120"
+  },
+  "packages": [
+    {
+      "registryType": "oci",
+      "identifier": "ghcr.io/imgrund/hybridlog:0.1.0",
+      "transport": { "type": "stdio" },
+      "runtimeHint": "docker",
+      "packageArguments": [
+        { "type": "positional", "value": "php" },
+        { "type": "positional", "value": "artisan" },
+        { "type": "positional", "value": "mcp:start" },
+        { "type": "positional", "value": "garmin" }
+      ],
+      "environmentVariables": [
+        { "name": "DATABASE_URL", "description": "PostgreSQL URL of the hybridlog database this server reads. The database is created and filled by a hybridlog installation, not by this image.", "isRequired": true, "isSecret": true },
+        { "name": "APP_KEY", "description": "APP_KEY of the same hybridlog installation, so the container can read what that installation encrypted.", "isRequired": true, "isSecret": true }
+      ]
+    }
+  ],
+  "remotes": [
+    {
+      "type": "streamable-http",
+      "url": "https://{hybridlog_host}/mcp/garmin",
+      "variables": {
+        "hybridlog_host": { "description": "Host name of your own hybridlog deployment, for example hybridlog.example.com. There is no shared instance: this server runs on hardware you control.", "isRequired": true }
+      }
+    }
+  ]
+}

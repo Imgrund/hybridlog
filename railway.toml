@@ -1,0 +1,72 @@
+# Railway, the web service: the dashboard, the phone view and the MCP
+# connector. Two services share this repository and this image and differ
+# only in what they start, see railway.worker.toml for the other one.
+#
+#   railway init
+#   railway add --database postgres
+#   railway variables --set "APP_KEY=base64:$(openssl rand -base64 32)"
+#   railway up
+#
+# Railway reads railway.toml from the repository root, so this file is what
+# a service gets unless it is pointed elsewhere. The second service sets
+# its own path under Settings -> Config-as-code, as an absolute path:
+# /railway.worker.toml. That setting is a dashboard click or an API call,
+# never a variable; railway.worker.toml carries the call.
+#
+# Variables the deployment needs, on both services (Railway groups them per
+# service, and a shared variable in the project settings is the less
+# error-prone way to set them once):
+#
+#   DATABASE_URL           ${{Postgres.DATABASE_URL}}, the only database
+#                          setting there is: config/database.php and
+#                          fetcher/fetch.py both fall back to it
+#   APP_KEY                base64:..., or every session and encrypted
+#                          cookie is unreadable and the app refuses to boot
+#   APP_URL                https://<service>.up.railway.app
+#   TRUSTED_HOSTS          <service>.up.railway.app,healthcheck.railway.app
+#   TRUSTED_PROXIES        *
+#   SESSION_SECURE_COOKIE  true
+#   APP_ENV                production
+#   APP_DEBUG              false
+#   LOG_STACK              stderr
+#   PASSPORT_PRIVATE_KEY   the OAuth signing pair. A container discards its
+#   PASSPORT_PUBLIC_KEY    filesystem on every deploy, so keys generated
+#                          inside it sign the claude.ai connector out again
+#                          with the next one. Generate them outside:
+#                            openssl genrsa -out oauth-private.key 4096
+#                            openssl rsa -in oauth-private.key -pubout \
+#                                        -out oauth-public.key
+#
+# The Garmin login is interactive and needed about once a year. The session
+# lives in the database now, not in a file, so it can be done from anywhere
+# that reaches the database: `railway ssh` into this service and run
+# /opt/fetcher/bin/python fetcher/login.py, or run login.py on your own
+# machine with GARMIN_FETCH_DSN pointing at the public database URL that
+# Railway shows on the Postgres service.
+
+[build]
+builder = "DOCKERFILE"
+
+[deploy]
+# The image's own command. Named anyway, so that the three files show what
+# they start side by side rather than one of them by omission.
+startCommand = "/app/docker/serve.sh"
+
+# Migrations, the OAuth signing keys and the mirror's schema, in the new
+# container before it takes traffic. On this service only: the other one
+# would do the same work at the same moment against the same database.
+preDeployCommand = ["/app/docker/boot.sh"]
+
+# Laravel's health endpoint, wired in bootstrap/app.php.
+#
+# Railway sends this request with the host name healthcheck.railway.app,
+# and TrustHosts answers 400 to a host it has not been given, which shows
+# up as a healthcheck that fails while the application is perfectly fine.
+# Hence that name in TRUSTED_HOSTS above. It costs nothing: the protection
+# is against a forged Host header ending up in a generated URL, and this
+# is not a name an attacker can point anywhere.
+healthcheckPath = "/up"
+healthcheckTimeout = 120
+
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 10

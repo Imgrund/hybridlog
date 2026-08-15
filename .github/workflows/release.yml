@@ -1,0 +1,95 @@
+# The image a visitor starts from. Tagging a release builds it for the two
+# architectures self-hosters actually run and pushes it to ghcr.io, so that
+# the first `docker compose up -d` is a download rather than PHP
+# extensions, a Python virtualenv and a Tailwind pass compiled on a machine
+# that may well be a Raspberry Pi.
+name: Release
+
+on:
+  push:
+    tags: ['v*.*.*']
+  workflow_dispatch:
+
+# The registry is the only thing this writes to; the repository itself it
+# only reads. GITHUB_TOKEN carries whatever is granted here and nothing
+# else, so the narrower pair is also what limits the damage a compromised
+# action in the chain below could do.
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  image:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v7
+
+      # The runner is amd64, so the arm64 half is built under emulation and
+      # needs binfmt registered before buildx will accept the platform at
+      # all. Paying for it here is what lets an Apple Silicon Mac, an ARM
+      # VPS or a Raspberry Pi pull an image instead of building one.
+      - uses: docker/setup-qemu-action@v4
+
+      # The default docker driver builds one architecture at a time and has
+      # nowhere to put a multi-arch manifest. buildx's container driver
+      # writes both halves and the index over them, and is also the thing
+      # the type=gha cache below talks to.
+      - uses: docker/setup-buildx-action@v4
+
+      - uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          # Minted for this run and void when it ends, so publishing needs
+          # no secret kept in the repository.
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # v1.2.3 ships as 1.2.3 and as 1.2, so an installation can follow a
+      # minor line and still receive its patches. `latest` is left to the
+      # default latest=auto, which sets it on a stable tag and withholds it
+      # from a pre-release: v1.3.0-rc.1 is then reachable only by its own
+      # full version, and nobody lands on a release candidate by pulling
+      # the name they never chose.
+      #
+      # The branch line is what makes workflow_dispatch work. Started by
+      # hand from main, the semver patterns match nothing, and a build with
+      # an empty tag list has no name to push under.
+      - id: meta
+        uses: docker/metadata-action@v6
+        with:
+          images: ghcr.io/imgrund/hybridlog
+          tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=ref,event=branch
+          flavor: latest=auto
+          # The MCP registry takes this name as the proof that whoever
+          # pushed the image also owns the server entry. The Dockerfile
+          # already writes it into each platform's config; repeating it
+          # here puts it on the multi-arch index as well, so the check
+          # finds it whichever of the two it reads.
+          labels: |
+            io.modelcontextprotocol.server.name=io.github.imgrund/hybridlog
+          annotations: |
+            io.modelcontextprotocol.server.name=io.github.imgrund/hybridlog
+
+      - uses: docker/build-push-action@v7
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          # Labels live in an image's config, and a multi-arch manifest has
+          # no config of its own. The annotations carry the same statement
+          # on the index itself, which is where ghcr.io reads the source
+          # repository from to link the package back to this one.
+          annotations: ${{ steps.meta.outputs.annotations }}
+          # The emulated arm64 half is the slow part of this job, and from
+          # nothing it repeats every apt, npm and pip step of the build.
+          # mode=max keeps the intermediate stages too, so a release that
+          # only touched PHP reuses the Node and Python layers instead of
+          # resolving them again under emulation.
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

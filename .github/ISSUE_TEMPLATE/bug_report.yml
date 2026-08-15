@@ -1,0 +1,81 @@
+name: Bug report
+description: Something in the dashboard, the fetcher or the MCP server does not do what it says.
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Garmin's web API is unofficial and moves without notice. If a fetch
+        broke overnight and nothing here changed, that is worth reporting
+        too: repairing a broken endpoint is the most useful pull request
+        this project can get.
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: What you did, and what the software did instead.
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected
+    validations:
+      required: true
+
+  - type: dropdown
+    id: part
+    attributes:
+      label: Which part
+      description: The `fetch_log` table and the dashboard's fetch banner usually settle this.
+      options:
+        - Dashboard
+        - Fetcher
+        - MCP server
+        - Not sure
+    validations:
+      required: true
+
+  - type: dropdown
+    id: install
+    attributes:
+      label: How it is installed
+      options:
+        - Docker Compose
+        - Without Docker (local PHP, Node, Python)
+        - Railway
+        - Fly.io
+        - Other
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Version or commit
+      description: A release tag, or the output of `git rev-parse --short HEAD`.
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant logs
+      description: >-
+        `docker compose logs app` or `docker compose logs --tail 200 app`
+        for a Docker install; `storage/logs/laravel.log` otherwise. Paste
+        only the part around the failure.
+      render: shell
+
+  - type: checkboxes
+    id: no-personal-data
+    attributes:
+      label: Before submitting
+      options:
+        - label: >-
+            This report carries no real health data and no Garmin
+            credentials or tokens. Generated data from
+            `fetcher/seed_demo.py` reproduces almost every display bug.
+          required: true
