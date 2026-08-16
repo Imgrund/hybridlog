@@ -39,13 +39,41 @@ class MirrorSchemaHealTest extends TestCase
         $db = DB::connection('garmin');
 
         // Dropping the late columns turns it into the installation from
-        // before they existed.
-        $db->unprepared(
-            "alter table {$schema}.days"
-            .' drop column if exists sweat_loss_ml,'
-            .' drop column if exists hydration_goal_ml,'
-            .' drop column if exists hydration_value_ml'
-        );
+        // before they existed. Every table that has grown one is listed:
+        // the failure mode is a COMMENT written above its own ALTER, and
+        // that is invisible until a mirror without the column runs the file.
+        $late = [
+            'days' => [
+                'sweat_loss_ml', 'hydration_goal_ml', 'hydration_value_ml',
+                'stress_low_s', 'stress_medium_s', 'stress_high_s',
+                'stress_activity_s', 'stress_qualifier', 'bb_at_wake',
+                'bb_during_sleep', 'resting_hr_7d_avg',
+            ],
+            'sleep' => [
+                'skin_temp_deviation_c', 'avg_stress', 'avg_hr', 'awake_count',
+                'restless_moments', 'breathing_disruptions',
+                'breathing_disruption_severity', 'spo2_avg', 'spo2_lowest',
+                'body_battery_change', 'need_actual_min', 'need_baseline_min',
+                'midpoint_min', 'optimal_window_start_min',
+                'optimal_window_end_min', 'alignment_status',
+            ],
+            'readiness' => [
+                'feedback_long', 'sleep_score', 'hrv_weekly_avg',
+                'acwr_factor_feedback', 'hrv_factor_feedback',
+                'sleep_score_factor_feedback', 'sleep_history_factor_feedback',
+                'stress_history_factor_feedback', 'recovery_time_factor_feedback',
+            ],
+            'training_status' => ['balance_feedback', 'fitness_trend', 'fitness_trend_sport'],
+        ];
+
+        foreach ($late as $table => $columns) {
+            $drops = collect($columns)->map(fn ($c) => "drop column if exists {$c}")->implode(', ');
+            $db->unprepared("alter table {$schema}.{$table} {$drops}");
+        }
+
+        // raw_payload arrived whole rather than column by column, so the
+        // older shape is its absence.
+        $db->unprepared("drop table if exists {$schema}.raw_payload");
 
         // The point of the test: the same file the fetcher executes on
         // every run must go through without throwing on that mirror. It
@@ -57,15 +85,26 @@ class MirrorSchemaHealTest extends TestCase
             (string) file_get_contents(base_path('fetcher/schema.sql'))
         ));
 
-        $columns = collect($db->select(
-            'select column_name from information_schema.columns'
-            .' where table_schema = ? and table_name = ?',
-            [$schema, 'days']
-        ))->pluck('column_name');
+        foreach ($late as $table => $expected) {
+            $columns = collect($db->select(
+                'select column_name from information_schema.columns'
+                .' where table_schema = ? and table_name = ?',
+                [$schema, $table]
+            ))->pluck('column_name');
 
-        $this->assertTrue($columns->contains('sweat_loss_ml'));
-        $this->assertTrue($columns->contains('hydration_goal_ml'));
-        $this->assertTrue($columns->contains('hydration_value_ml'));
+            foreach ($expected as $column) {
+                $this->assertTrue(
+                    $columns->contains($column),
+                    "{$table}.{$column} was not restored by schema.sql"
+                );
+            }
+        }
+
+        $this->assertNotEmpty($db->select(
+            'select 1 from information_schema.tables'
+            .' where table_schema = ? and table_name = ?',
+            [$schema, 'raw_payload']
+        ), 'raw_payload was not restored by schema.sql');
 
         // The healed mirror is not the one the suite built: whoever runs
         // next rebuilds from scratch instead of trusting it.

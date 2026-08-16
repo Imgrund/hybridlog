@@ -7,6 +7,43 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Nothing Garmin sends is dropped any more.** Every endpoint answer is
+  kept whole in a new `raw_payload` table, written by the one function
+  every call already passes through, so endpoints added later are covered
+  without anyone wiring them up. It is `jsonb` rather than text because
+  this one exists to be queried into: a field no column covers is now a
+  question the mirror can still answer, which until now meant asking
+  Garmin again for a day it no longer serves. One day is 25 payloads,
+  about 50 KB stored, so a year of one athlete is under 20 MB.
+- **Thirty-six columns for what the payloads were already carrying.**
+  The night gains skin temperature against the athlete's own baseline,
+  stress and heart rate while asleep, wake-ups, restless moments,
+  breathing interruptions, blood oxygen, the battery it recharged,
+  Garmin's own sleep need, and the optimal window with the midpoint
+  actually slept, which is social jetlag measured rather than felt. The
+  day gains its stress split (low, medium, high, and the part explained by
+  training), body battery at wake-up and across the night, and Garmin's
+  seven-day resting heart rate. Readiness gains the reasons beside the
+  percentages, so a score of 62 can say it was HRV and not sleep. Training
+  status gains what the monthly load is short of, in Garmin's words.
+
+### Fixed
+
+- **HRV across the night was never stored.** The column read `avgSleepHRV`
+  and `avgOvernightHrv` is what Garmin sends, so `sleep.avg_sleep_hrv` was
+  null in every row since the first fetch while the number sat in every
+  payload. Demo data filled the column, which is why nothing looked wrong.
+- **VO2max arrived on nine days out of 139.** It was read from
+  `max_metrics`, an endpoint that answers `[]` on this account, while the
+  hill-score payload carries `vo2Max` daily and was discarded whenever the
+  hill score itself was missing. Both now write, and neither overwrites
+  the other with a null.
+- The comment on `days.spo2_avg` said the sensor was switched off. It
+  reports values again, so the column now describes what a run of nulls
+  means rather than asserting a cause.
+
 ## [0.1.3] - 2026-08-16
 
 ### Added

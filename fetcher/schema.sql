@@ -108,6 +108,14 @@ CREATE TABLE IF NOT EXISTS {mirror}.days (
 ALTER TABLE {mirror}.days ADD COLUMN IF NOT EXISTS sweat_loss_ml double precision;
 ALTER TABLE {mirror}.days ADD COLUMN IF NOT EXISTS hydration_goal_ml double precision;
 ALTER TABLE {mirror}.days ADD COLUMN IF NOT EXISTS hydration_value_ml double precision;
+ALTER TABLE {mirror}.days ADD COLUMN IF NOT EXISTS stress_low_s integer;
+ALTER TABLE {mirror}.days ADD COLUMN IF NOT EXISTS stress_medium_s integer;
+ALTER TABLE {mirror}.days ADD COLUMN IF NOT EXISTS stress_high_s integer;
+ALTER TABLE {mirror}.days ADD COLUMN IF NOT EXISTS stress_activity_s integer;
+ALTER TABLE {mirror}.days ADD COLUMN IF NOT EXISTS stress_qualifier text;
+ALTER TABLE {mirror}.days ADD COLUMN IF NOT EXISTS bb_at_wake integer;
+ALTER TABLE {mirror}.days ADD COLUMN IF NOT EXISTS bb_during_sleep integer;
+ALTER TABLE {mirror}.days ADD COLUMN IF NOT EXISTS resting_hr_7d_avg integer;
 
 COMMENT ON COLUMN {mirror}.days.date IS 'YYYY-MM-DD';
 COMMENT ON COLUMN {mirror}.days.bb_high IS 'body battery';
@@ -115,7 +123,28 @@ COMMENT ON COLUMN {mirror}.days.bb_intraday_json IS '[[ts, level], ...]';
 COMMENT ON COLUMN {mirror}.days.sweat_loss_ml IS 'Garmin''s per-day sweat loss estimate';
 COMMENT ON COLUMN {mirror}.days.hydration_value_ml IS 'water logged in Garmin Connect that day';
 COMMENT ON COLUMN {mirror}.days.hill_score IS 'running hill capacity (overall)';
-COMMENT ON COLUMN {mirror}.days.spo2_avg IS 'nightly pulse ox, null while disabled on the watch';
+COMMENT ON COLUMN {mirror}.days.spo2_avg IS
+    'nightly pulse ox. Null on days the watch had the sensor switched off,
+which is a setting and not a defect: a run of nulls that ends says when it
+was turned on, not that the data was lost.';
+-- stress_avg says how the day went, these four say what it was made of.
+-- Garmin scores every minute it can measure into one of them, so they sum
+-- to stress_duration_s plus rest_stress_duration_s, and a day at the same
+-- average can be a calm day with one hard hour or an even grind.
+COMMENT ON COLUMN {mirror}.days.stress_low_s IS 'seconds Garmin scored as low stress';
+COMMENT ON COLUMN {mirror}.days.stress_medium_s IS 'seconds scored as medium stress';
+COMMENT ON COLUMN {mirror}.days.stress_high_s IS 'seconds scored as high stress';
+COMMENT ON COLUMN {mirror}.days.stress_activity_s IS
+    'seconds the elevated reading is explained by training rather than by
+strain: the difference between a hard session and a hard day';
+COMMENT ON COLUMN {mirror}.days.stress_qualifier IS 'Garmin''s word for the day, e.g. CALM';
+COMMENT ON COLUMN {mirror}.days.bb_at_wake IS
+    'body battery at wake-up, which is what the night was worth. bb_high can
+be reached later in the day and says something else.';
+COMMENT ON COLUMN {mirror}.days.bb_during_sleep IS 'body battery recharged while asleep';
+COMMENT ON COLUMN {mirror}.days.resting_hr_7d_avg IS
+    'Garmin''s own seven-day mean, kept because it is the baseline the watch
+compares today against, and recomputing it here would not be the same number';
 
 CREATE TABLE IF NOT EXISTS {mirror}.heart_profile (
     date text PRIMARY KEY,
@@ -157,8 +186,65 @@ CREATE TABLE IF NOT EXISTS {mirror}.sleep (
     fetched_at text
 );
 
+ALTER TABLE {mirror}.sleep ADD COLUMN IF NOT EXISTS skin_temp_deviation_c double precision;
+ALTER TABLE {mirror}.sleep ADD COLUMN IF NOT EXISTS avg_stress double precision;
+ALTER TABLE {mirror}.sleep ADD COLUMN IF NOT EXISTS avg_hr double precision;
+ALTER TABLE {mirror}.sleep ADD COLUMN IF NOT EXISTS awake_count integer;
+ALTER TABLE {mirror}.sleep ADD COLUMN IF NOT EXISTS restless_moments integer;
+ALTER TABLE {mirror}.sleep ADD COLUMN IF NOT EXISTS breathing_disruptions integer;
+ALTER TABLE {mirror}.sleep ADD COLUMN IF NOT EXISTS breathing_disruption_severity text;
+ALTER TABLE {mirror}.sleep ADD COLUMN IF NOT EXISTS spo2_avg double precision;
+ALTER TABLE {mirror}.sleep ADD COLUMN IF NOT EXISTS spo2_lowest integer;
+ALTER TABLE {mirror}.sleep ADD COLUMN IF NOT EXISTS body_battery_change integer;
+ALTER TABLE {mirror}.sleep ADD COLUMN IF NOT EXISTS need_actual_min integer;
+ALTER TABLE {mirror}.sleep ADD COLUMN IF NOT EXISTS need_baseline_min integer;
+ALTER TABLE {mirror}.sleep ADD COLUMN IF NOT EXISTS midpoint_min integer;
+ALTER TABLE {mirror}.sleep ADD COLUMN IF NOT EXISTS optimal_window_start_min integer;
+ALTER TABLE {mirror}.sleep ADD COLUMN IF NOT EXISTS optimal_window_end_min integer;
+ALTER TABLE {mirror}.sleep ADD COLUMN IF NOT EXISTS alignment_status text;
+
 COMMENT ON COLUMN {mirror}.sleep.date IS 'calendar date the night belongs to';
 COMMENT ON COLUMN {mirror}.sleep.score_components_json IS 'sleepScores object';
+COMMENT ON COLUMN {mirror}.sleep.avg_sleep_hrv IS
+    'mean HRV across the night. Garmin calls this avgOvernightHrv and it is
+not the same number as hrv.last_night_avg, which is the five-minute-window
+average the readiness model uses.';
+-- The watch measures wrist temperature all night and reports how far it
+-- sat from this athlete's own baseline, not an absolute. So it says the
+-- body ran warm, never how warm the room was, and it moves for an
+-- infection, alcohol or a late session as readily as for a hot night.
+-- Useful precisely as the mediator outdoor temperature cannot be: warm
+-- outside and flat here means the room stayed cool.
+COMMENT ON COLUMN {mirror}.sleep.skin_temp_deviation_c IS
+    'degrees Celsius away from the athlete''s own skin-temperature baseline,
+which the watch needs about three weeks of nights to establish';
+COMMENT ON COLUMN {mirror}.sleep.avg_stress IS 'mean stress score while asleep';
+COMMENT ON COLUMN {mirror}.sleep.awake_count IS 'times Garmin scored a wake-up, not counting restlessness';
+COMMENT ON COLUMN {mirror}.sleep.restless_moments IS 'movements too brief to count as waking';
+COMMENT ON COLUMN {mirror}.sleep.breathing_disruptions IS
+    'count of breathing interruptions Garmin flagged that night. A training
+metric, not a diagnosis: apnoea is diagnosed in a sleep laboratory.';
+COMMENT ON COLUMN {mirror}.sleep.breathing_disruption_severity IS 'NONE / LOW / ... as Garmin grades it';
+COMMENT ON COLUMN {mirror}.sleep.spo2_avg IS
+    'blood oxygen across the night, from the sleep payload''s own summary
+rather than from days.spo2_avg, which covers the whole calendar day';
+COMMENT ON COLUMN {mirror}.sleep.body_battery_change IS 'body battery gained across the night';
+COMMENT ON COLUMN {mirror}.sleep.need_actual_min IS
+    'minutes of sleep Garmin held this athlete needed that night, already
+adjusted for recent HRV and sleep history; need_baseline_min is the same
+figure before those adjustments';
+-- Minutes since midnight, so 1420 is 23:40 and 30 is 00:30. The window can
+-- start before midnight and end after it, which is why start can exceed
+-- end. Distance between midpoint_min and the middle of the window is the
+-- number worth watching: it is social jetlag, measured.
+COMMENT ON COLUMN {mirror}.sleep.midpoint_min IS 'middle of the night actually slept, minutes since midnight';
+COMMENT ON COLUMN {mirror}.sleep.optimal_window_start_min IS
+    'start of the window Garmin derives from this athlete''s own rhythm,
+minutes since midnight';
+COMMENT ON COLUMN {mirror}.sleep.alignment_status IS
+    'ALIGNED and its opposites: whether the night sat inside that window.
+Garmin''s verdict, kept because it applies a threshold this mirror would
+otherwise have to invent.';
 
 CREATE TABLE IF NOT EXISTS {mirror}.hrv (
     date text PRIMARY KEY,
@@ -201,8 +287,27 @@ CREATE TABLE IF NOT EXISTS {mirror}.readiness (
     fetched_at text
 );
 
+ALTER TABLE {mirror}.readiness ADD COLUMN IF NOT EXISTS feedback_long text;
+ALTER TABLE {mirror}.readiness ADD COLUMN IF NOT EXISTS sleep_score integer;
+ALTER TABLE {mirror}.readiness ADD COLUMN IF NOT EXISTS hrv_weekly_avg integer;
+ALTER TABLE {mirror}.readiness ADD COLUMN IF NOT EXISTS acwr_factor_feedback text;
+ALTER TABLE {mirror}.readiness ADD COLUMN IF NOT EXISTS hrv_factor_feedback text;
+ALTER TABLE {mirror}.readiness ADD COLUMN IF NOT EXISTS sleep_score_factor_feedback text;
+ALTER TABLE {mirror}.readiness ADD COLUMN IF NOT EXISTS sleep_history_factor_feedback text;
+ALTER TABLE {mirror}.readiness ADD COLUMN IF NOT EXISTS stress_history_factor_feedback text;
+ALTER TABLE {mirror}.readiness ADD COLUMN IF NOT EXISTS recovery_time_factor_feedback text;
+
 COMMENT ON COLUMN {mirror}.readiness.score IS 'morning snapshot: Garmin''s canonical daily value';
 COMMENT ON COLUMN {mirror}.readiness.sleep_score_factor IS 'factor percents as delivered by Garmin';
+-- The factor percents say how much each input moved the score. These say
+-- which way, in Garmin's own words, and they are the difference between
+-- "readiness 62" and "readiness 62 because HRV is unbalanced while
+-- everything else is fine".
+COMMENT ON COLUMN {mirror}.readiness.feedback_long IS
+    'Garmin''s reason for the score as an enum, e.g. HIGH_HRV_UNBALANCED';
+COMMENT ON COLUMN {mirror}.readiness.acwr_factor_feedback IS
+    'VERY_GOOD / GOOD / MODERATE / ... for the load ratio, and so for the
+other *_factor_feedback columns beside it';
 COMMENT ON COLUMN {mirror}.readiness.current_score IS
     'Intraday snapshot, and so are the other current_* columns: the watch
 recomputes readiness after every workout, while the morning columns freeze
@@ -220,8 +325,21 @@ CREATE TABLE IF NOT EXISTS {mirror}.training_status (
     fetched_at text
 );
 
-COMMENT ON COLUMN {mirror}.training_status.status_key IS 'PRODUCTIVE / MAINTAINING / ...';
+ALTER TABLE {mirror}.training_status ADD COLUMN IF NOT EXISTS balance_feedback text;
+ALTER TABLE {mirror}.training_status ADD COLUMN IF NOT EXISTS fitness_trend integer;
+ALTER TABLE {mirror}.training_status ADD COLUMN IF NOT EXISTS fitness_trend_sport text;
+
+COMMENT ON COLUMN {mirror}.training_status.status_key IS
+    'Garmin''s phrase, which carries a variant number: PRODUCTIVE_6,
+PEAKING_1, OVERREACHING_4, NO_STATUS_2. Match on the prefix, never on
+equality, or the same status read twice counts as two.';
 COMMENT ON COLUMN {mirror}.training_status.load_focus_json IS 'monthly load split + targets';
+COMMENT ON COLUMN {mirror}.training_status.balance_feedback IS
+    'what the monthly load split is short of, e.g. AEROBIC_LOW_SHORTAGE.
+load_focus_json carries the numbers this sentence is drawn from.';
+COMMENT ON COLUMN {mirror}.training_status.fitness_trend IS
+    'Garmin''s own direction of travel for fitness_trend_sport, positive for
+rising; it is not VO2max and moves on a slower clock than the load ratio';
 
 -- id is bigint, not integer: Garmin activity ids are already past 2^31,
 -- so a 4-byte column would reject every row this fetcher writes.
@@ -363,6 +481,40 @@ CREATE TABLE IF NOT EXISTS {mirror}.fetch_log (
 
 COMMENT ON TABLE {mirror}.fetch_log IS
     'Bookkeeping: which day/kind combinations were fetched when (debugging aid).';
+
+-- Everything Garmin answered, before this fetcher decided what mattered.
+--
+-- The tables above are a reading of the payloads: a column exists because
+-- someone found a use for the field. That reading is always behind, and
+-- being behind used to mean the data was gone, because a field nobody had
+-- thought of was dropped on the floor and the only way back was to ask
+-- Garmin again for a day it no longer serves. This table is the floor.
+--
+-- Written by call(), so it catches every endpoint the fetcher has, plus
+-- every one it grows later, without anyone remembering to wire it up.
+-- jsonb and not text, unlike the *_json columns elsewhere in this file:
+-- those are handed to the frontend whole, this one exists to be queried
+-- into. Key order and duplicate keys are lost in the conversion, which
+-- costs nothing here and buys operators like ->> and @> for a model
+-- writing its own SQL.
+--
+-- About 300 KB of JSON a day, which TOAST stores as roughly 50 KB
+-- (measured 2026-08-16, 25 payloads), so a year of one athlete is under
+-- 20 MB. Deleting old rows is safe: it costs history nobody has asked for
+-- yet, never a column above.
+CREATE TABLE IF NOT EXISTS {mirror}.raw_payload (
+    date text,
+    kind text,
+    payload jsonb,
+    fetched_at text,
+    PRIMARY KEY (date, kind)
+);
+
+COMMENT ON TABLE {mirror}.raw_payload IS
+    'Garmin''s untouched answer per day and endpoint, kept so that a field
+no column covers is still a question this mirror can answer. `kind` matches
+fetch_log.kind (stats, sleep, hrv, readiness, training_status, spo2, ...).
+Start at: SELECT jsonb_object_keys(payload) FROM raw_payload WHERE kind = ''sleep'' LIMIT 1';
 
 CREATE TABLE IF NOT EXISTS {mirror}.device_sync (
     device_key text PRIMARY KEY,
