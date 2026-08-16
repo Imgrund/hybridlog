@@ -56,7 +56,8 @@ browser language unless the profile says otherwise.</sub>
 - **MCP server**: twelve tools and one prompt over `laravel/mcp`, in two
   transports. Local (stdio) for Claude Code and Claude Desktop, hosted
   (streamable HTTP with OAuth 2.1, PKCE and dynamic client registration)
-  for claude.ai, ChatGPT, LM Studio and anything else that speaks it.
+  for claude.ai, ChatGPT, Mistral's Le Chat, LM Studio and anything else
+  that speaks it.
 - **Dashboard**: Laravel + Alpine + Chart.js. It draws the body map and
   the training load, and it is also the login the connector authenticates
   against and the place where you set what the chat may see.
@@ -157,8 +158,8 @@ One address, the same for every client:
 https://<your-domain>/mcp/garmin
 ```
 
-Claude, ChatGPT, Langdock and LM Studio all take it and run OAuth against
-the dashboard's own login, so no client ever sees a password and
+Claude, ChatGPT, Langdock, Le Chat and LM Studio all take it and run OAuth
+against the dashboard's own login, so no client ever sees a password and
 `/connect` can cut any of them off again. Claude Code and Claude Desktop
 can skip the deployment entirely and talk to the repository over stdio.
 [docs/connect-ai.md](docs/connect-ai.md) has the steps per client.
