@@ -320,11 +320,21 @@ final class Mirror
     }
 
     /**
-     * Whether this tenant's reader may actually reach its schema.
+     * Whether this tenant's reader may actually reach its schema, and
+     * everything now in it.
      *
      * A privilege, not a role: those two come apart, because dropping a
      * schema takes its grants with it and leaves the role standing, holding
      * nothing. Asked of the server, which is the only party that knows.
+     *
+     * The table half is asked because schema.sql grows tables and USAGE on
+     * the schema says nothing about them. New tables usually inherit SELECT
+     * from the ALTER DEFAULT PRIVILEGES in tenant.sql, but only where the
+     * role that creates them is the one those privileges were bound to; an
+     * installation whose fetcher and app connect as different roles gets a
+     * table the reader cannot see, and the symptom is a table that exists,
+     * is listed by describe-schema, and refuses every select against it.
+     * Cheaper to notice here than to diagnose there.
      */
     private static function readerCanRead(int $tenant): bool
     {
@@ -333,7 +343,19 @@ final class Mirror
             [self::schema($tenant), self::reader($tenant)]
         );
 
-        return (bool) ($row->ok ?? false);
+        if (! (bool) ($row->ok ?? false)) {
+            return false;
+        }
+
+        $unreadable = DB::connection('garmin')->selectOne(
+            'select count(*) as n from pg_class c'
+            .' join pg_namespace n on n.oid = c.relnamespace'
+            ." where n.nspname = ? and c.relkind = 'r'"
+            ." and not has_table_privilege(?, c.oid, 'select')",
+            [self::schema($tenant), self::reader($tenant)]
+        );
+
+        return (int) ($unreadable->n ?? 0) === 0;
     }
 
     /**

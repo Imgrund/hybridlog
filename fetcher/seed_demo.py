@@ -76,6 +76,19 @@ STRENGTH_EXERCISES = {
 }
 
 
+def grade(percent: float) -> str:
+    """Garmin's word for a factor percent, on the thresholds its own
+    readiness screen appears to use. Demo data only: the live fetcher takes
+    these verbatim from the payload rather than deriving them."""
+    if percent >= 80:
+        return "VERY_GOOD"
+    if percent >= 60:
+        return "GOOD"
+    if percent >= 40:
+        return "MODERATE"
+    return "POOR"
+
+
 def holds_real_data(conn) -> bool:
     """True if any mirror table carries a row this script did not write."""
     for table in ("days", "activities", "sleep"):
@@ -156,12 +169,28 @@ def seed(conn) -> None:
         score = max(40, min(96, int(78 + (dur / 3600 - 7.3) * 9 - awake / 300 + rng.gauss(0, 5))))
         hrv_night = max(35.0, hrv_baseline + rng.gauss(0, 6) - (6 if short_night else 0))
 
+        # The night as the watch describes it beyond its stages. Everything
+        # here hangs off the length of the night and the jitter above, so a
+        # short night shows up as warmer skin, more waking and less battery
+        # rather than as an unrelated set of numbers.
+        midpoint = sleep_start + (sleep_end - sleep_start) / 2
+        midpoint_min = midpoint.hour * 60 + midpoint.minute
+        window_start, window_end = 30, 470
+        skin_temp = round(rng.gauss(0, 0.35) + (0.4 if short_night else 0), 1)
+        awake_count = max(0, int(rng.gauss(1.1, 0.9)) + (1 if short_night else 0))
+
         conn.execute(
             """INSERT INTO sleep (date, start_local, end_local, duration_s, deep_s,
                light_s, rem_s, awake_s, nap_s, score, score_qualifier,
                score_components_json, avg_sleep_hrv, respiration_avg,
-               respiration_lowest, respiration_highest, fetched_at)
-               VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)""",
+               respiration_lowest, respiration_highest, skin_temp_deviation_c,
+               avg_stress, avg_hr, awake_count, restless_moments,
+               breathing_disruptions, breathing_disruption_severity, spo2_avg,
+               spo2_lowest, body_battery_change, need_actual_min,
+               need_baseline_min, midpoint_min, optimal_window_start_min,
+               optimal_window_end_min, alignment_status, fetched_at)
+               VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,
+                       %s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)""",
             (
                 stamp, sleep_start.isoformat(sep=" "), sleep_end.isoformat(sep=" "),
                 dur, deep, light, rem, awake, 0, score,
@@ -171,6 +200,19 @@ def seed(conn) -> None:
                 round(rng.uniform(13.2, 15.4), 1),
                 round(rng.uniform(11.0, 12.8), 1),
                 round(rng.uniform(16.0, 18.5), 1),
+                skin_temp,
+                round(rng.uniform(11.0, 21.0), 1),
+                round(rng.uniform(43.0, 51.0), 1),
+                awake_count,
+                int(rng.uniform(22, 46)),
+                max(0, int(rng.gauss(6, 5))),
+                "NONE",
+                round(rng.uniform(94.5, 98.0), 1),
+                int(rng.uniform(85, 92)),
+                max(20, int(70 - (14 if short_night else 0) + rng.gauss(0, 6))),
+                420, 440,
+                midpoint_min, window_start, window_end,
+                "ALIGNED" if window_start <= midpoint_min <= window_end else "LATE",
                 "demo",
             ),
         )
@@ -266,11 +308,23 @@ def seed(conn) -> None:
         chronic_window = [value for dd, value in loads if dd > d - timedelta(days=28)]
         chronic = sum(chronic_window) / max(1, len(chronic_window)) * 7
         acwr = round(acute / chronic, 2) if chronic > 0 else None
+        # The variant number is part of how Garmin writes this, and the
+        # column's comment tells readers to match on the prefix. Demo data
+        # that said plain "PRODUCTIVE" would make that advice look wrong.
         conn.execute(
             """INSERT INTO training_status (date, status_key, acute_load,
-               chronic_load, acwr, load_focus_json, fetched_at)
-               VALUES (%s,%s,%s,%s,%s,%s,%s)""",
-            (stamp, "PRODUCTIVE", round(acute), round(chronic), acwr, None, "demo"),
+               chronic_load, acwr, load_focus_json, balance_feedback,
+               fitness_trend, fitness_trend_sport, fetched_at)
+               VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)""",
+            (
+                stamp,
+                "OVERREACHING_4" if (acwr or 1.0) > 1.5
+                else "MAINTAINING_1" if (acwr or 1.0) < 0.8
+                else f"PRODUCTIVE_{rng.randint(1, 6)}",
+                round(acute), round(chronic), acwr, None,
+                "AEROBIC_LOW_SHORTAGE" if rng.random() < 0.4 else "BALANCED",
+                rng.randint(-1, 4), "RUNNING", "demo",
+            ),
         )
 
         # --- readiness (simple plausible model)
@@ -280,11 +334,20 @@ def seed(conn) -> None:
             + 0.2 * max(0, 100 - (acwr or 1.0) * 55)
         )
         readiness = max(8, min(97, readiness + rng.randint(-4, 4)))
+        acwr_factor = int(max(10, 100 - (acwr or 1.0) * 40))
+        hrv_factor = int(max(5, min(100, (hrv_night - hrv_baseline + 12) * 6)))
+        recovery_factor = rng.randint(55, 100)
+        sleep_history = rng.randint(55, 95)
+        stress_history = rng.randint(50, 95)
         conn.execute(
             """INSERT INTO readiness (date, score, level, feedback_short,
                sleep_score_factor, recovery_time_factor, acwr_factor, hrv_factor,
-               sleep_history_factor, stress_history_factor, recovery_time_h, fetched_at)
-               VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)""",
+               sleep_history_factor, stress_history_factor, recovery_time_h,
+               feedback_long, sleep_score, hrv_weekly_avg, acwr_factor_feedback,
+               hrv_factor_feedback, sleep_score_factor_feedback,
+               sleep_history_factor_feedback, stress_history_factor_feedback,
+               recovery_time_factor_feedback, fetched_at)
+               VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)""",
             (
                 stamp, readiness,
                 "PRIME" if readiness >= 95
@@ -292,11 +355,19 @@ def seed(conn) -> None:
                 else "MODERATE" if readiness >= 50
                 else "LOW" if readiness >= 25
                 else "POOR",
-                None, score, rng.randint(55, 100),
-                int(max(10, 100 - (acwr or 1.0) * 40)),
-                int(max(5, min(100, (hrv_night - hrv_baseline + 12) * 6))),
-                rng.randint(55, 95), rng.randint(50, 95),
-                round(max(0.0, day_load * rng.uniform(0.25, 0.5)), 1), "demo",
+                None, score, recovery_factor,
+                acwr_factor, hrv_factor, sleep_history, stress_history,
+                round(max(0.0, day_load * rng.uniform(0.25, 0.5)), 1),
+                # The reason names the weakest input, which is how Garmin
+                # picks it: a score is explained by what dragged it down.
+                "LOW_HRV" if hrv_factor < 40
+                else "HIGH_ACWR" if acwr_factor < 40
+                else "LOW_SLEEP_SCORE" if score < 60
+                else "GOOD_RECOVERY",
+                score, round(weekly, 1),
+                grade(acwr_factor), grade(hrv_factor), grade(score),
+                grade(sleep_history), grade(stress_history), grade(recovery_factor),
+                "demo",
             ),
         )
 
@@ -305,6 +376,13 @@ def seed(conn) -> None:
         steps = int(rng.uniform(6000, 9500) + (4500 if plan and day_load else 0))
         bb_high = int(min(100, 60 + score * 0.4 + rng.uniform(-5, 8)))
         bb_low = int(max(5, bb_high - rng.uniform(45, 70)))
+        # The stress split has to add up to the total above it, or a reader
+        # comparing the two finds a contradiction the real mirror never has.
+        stress_dur = rng.randint(10000, 26000)
+        rest_stress = rng.randint(20000, 40000)
+        stress_high = int(stress_dur * rng.uniform(0.02, 0.10))
+        stress_medium = int(stress_dur * rng.uniform(0.15, 0.30))
+        stress_low = stress_dur - stress_high - stress_medium
         conn.execute(
             """INSERT INTO days (date, steps, distance_m, floors_up, calories_total,
                calories_active, calories_bmr, resting_hr, min_hr, max_hr, stress_avg,
@@ -312,22 +390,34 @@ def seed(conn) -> None:
                bb_charged, bb_drained, bb_intraday_json, intensity_moderate_min,
                intensity_vigorous_min, sedentary_s, active_s, highly_active_s,
                respiration_avg, respiration_lowest, respiration_highest,
-               vo2max_running, vo2max_cycling, fetched_at)
-               VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)""",
+               vo2max_running, vo2max_cycling, stress_low_s, stress_medium_s,
+               stress_high_s, stress_activity_s, stress_qualifier, bb_at_wake,
+               bb_during_sleep, resting_hr_7d_avg, fetched_at)
+               VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,
+                       %s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)""",
             (
                 stamp, steps, int(steps * 0.75), rng.randint(4, 18),
                 int(2400 + day_load * 3 + rng.uniform(-150, 200)),
                 int(500 + day_load * 3), 1900,
                 int(rhr), int(rhr - rng.uniform(1, 4)), int(120 + day_load * 0.4),
                 int(rng.uniform(22, 42)), rng.randint(70, 96),
-                rng.randint(10000, 26000), rng.randint(20000, 40000),
+                stress_dur, rest_stress,
                 bb_high, bb_low, rng.randint(30, 60), rng.randint(40, 75), None,
                 rng.randint(15, 60) + (30 if day_load else 0),
                 (int(day_load * 0.45) if day_load else rng.randint(0, 10)),
                 rng.randint(28000, 40000), rng.randint(5000, 12000), rng.randint(1200, 5000),
                 round(rng.uniform(13.5, 15.5), 1), round(rng.uniform(11, 13), 1),
                 round(rng.uniform(16, 19), 1),
-                round(vo2, 1), None, "demo",
+                round(vo2, 1), None,
+                stress_low, stress_medium, stress_high,
+                (int(day_load * 60) if day_load else 0),
+                "CALM" if stress_high < stress_dur * 0.05 else "BALANCED",
+                # Body battery at wake-up is the top of the day, so it sits
+                # at bb_high rather than near it, and what the night added
+                # is the climb from the previous evening's low.
+                bb_high, int(min(bb_high - 5, rng.uniform(45, 75))),
+                int(rhr + rng.uniform(-1, 1)),
+                "demo",
             ),
         )
 

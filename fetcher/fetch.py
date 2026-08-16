@@ -62,6 +62,7 @@ from zoneinfo import ZoneInfo
 import psycopg
 from dotenv import load_dotenv
 from garminconnect import Garmin
+from psycopg.types.json import Json
 
 BASE_DIR = Path(__file__).resolve().parent
 PROJECT_DIR = BASE_DIR.parent
@@ -344,12 +345,36 @@ class Fetcher:
             payload = fn(*args, **kwargs)
             if payload is not None:
                 save_raw(day, kind, payload)
+                self.keep_raw(day, kind, payload)
             self.log(day, kind, True, None)
             return payload
         except Exception as exc:  # noqa: BLE001 - unofficial API, log and move on
             self.log(day, kind, False, f"{type(exc).__name__}: {exc}")
             print(f"  ! {day} {kind}: {type(exc).__name__}: {exc}", file=sys.stderr)
             return None
+
+    def keep_raw(self, day: str, kind: str, payload) -> None:
+        """Keep Garmin's answer whole, next to the reading of it.
+
+        Sits beside save_raw rather than replacing it: the file archive is
+        for a developer at a shell, this is for the database the models and
+        the language model read. A platform that discards its disk on every
+        deploy keeps only this one.
+
+        Deliberately no failure path of its own. An endpoint that answers
+        with something psycopg cannot adapt must not cost the day the
+        columns that parsed fine, so the miss is logged and the fetch goes
+        on; fetch_log still records the call as the success it was.
+        """
+        try:
+            self.upsert("raw_payload", ("date", "kind"), {
+                "date": day,
+                "kind": kind,
+                "payload": Json(payload),
+                "fetched_at": now(),
+            })
+        except Exception as exc:  # noqa: BLE001 - never worth losing a day over
+            print(f"  ~ {day} {kind}: raw not kept ({type(exc).__name__})", file=sys.stderr)
 
     def log(self, day: str, kind: str, ok: bool, error: str | None) -> None:
         self.upsert("fetch_log", ("date", "kind"), {
@@ -416,6 +441,17 @@ class Fetcher:
             "sedentary_s": s.get("sedentarySeconds"),
             "active_s": s.get("activeSeconds"),
             "highly_active_s": s.get("highlyActiveSeconds"),
+            # stress_avg is a mean and hides its own shape. These four are
+            # what it was made of, and activity stress is the one that
+            # separates a hard session from a hard day.
+            "stress_low_s": s.get("lowStressDuration"),
+            "stress_medium_s": s.get("mediumStressDuration"),
+            "stress_high_s": s.get("highStressDuration"),
+            "stress_activity_s": s.get("activityStressDuration"),
+            "stress_qualifier": s.get("stressQualifier"),
+            "bb_at_wake": s.get("bodyBatteryAtWakeTime"),
+            "bb_during_sleep": s.get("bodyBatteryDuringSleep"),
+            "resting_hr_7d_avg": s.get("lastSevenDaysAvgRestingHeartRate"),
             "fetched_at": now(),
         })
 
@@ -428,6 +464,13 @@ class Fetcher:
             return
         scores = dto.get("sleepScores") or {}
         overall = (scores.get("overall") or {})
+        need = dto.get("sleepNeed") or {}
+        alignment = dto.get("sleepAlignment") or {}
+        spo2 = payload.get("wellnessSpO2SleepSummaryDTO") or {}
+        # A list of intervals, one per interruption. Only the count is kept:
+        # the intervals themselves are in raw_payload for anyone who wants
+        # to know when in the night they clustered.
+        disruptions = payload.get("breathingDisruptionData")
         self.upsert("sleep", ("date",), {
             "date": day,
             "start_local": local_ts(dto.get("sleepStartTimestampLocal")),
@@ -441,10 +484,30 @@ class Fetcher:
             "score": overall.get("value"),
             "score_qualifier": overall.get("qualifierKey"),
             "score_components_json": json.dumps(scores, ensure_ascii=False),
-            "avg_sleep_hrv": dto.get("avgSleepHRV") or payload.get("avgSleepHRV"),
+            # Garmin's name for this is avgOvernightHrv, at the top level.
+            # The two spellings below it were guesses and matched nothing,
+            # which is why the column stood empty from the first fetch to
+            # 2026-08-16 while the number sat in every payload.
+            "avg_sleep_hrv": payload.get("avgOvernightHrv"),
             "respiration_avg": dto.get("averageRespirationValue"),
             "respiration_lowest": dto.get("lowestRespirationValue"),
             "respiration_highest": dto.get("highestRespirationValue"),
+            "skin_temp_deviation_c": payload.get("avgSkinTempDeviationC"),
+            "avg_stress": dto.get("avgSleepStress"),
+            "avg_hr": dto.get("avgHeartRate"),
+            "awake_count": dto.get("awakeCount"),
+            "restless_moments": payload.get("restlessMomentsCount"),
+            "breathing_disruptions": len(disruptions) if isinstance(disruptions, list) else None,
+            "breathing_disruption_severity": dto.get("breathingDisruptionSeverity"),
+            "spo2_avg": spo2.get("averageSPO2"),
+            "spo2_lowest": spo2.get("lowestSPO2"),
+            "body_battery_change": payload.get("bodyBatteryChange"),
+            "need_actual_min": need.get("actual"),
+            "need_baseline_min": need.get("baseline"),
+            "midpoint_min": alignment.get("lastSleepMidpointMins"),
+            "optimal_window_start_min": alignment.get("optimalSleepWindowStartMins"),
+            "optimal_window_end_min": alignment.get("optimalSleepWindowEndMins"),
+            "alignment_status": alignment.get("status"),
             "fetched_at": now(),
         })
 
@@ -492,6 +555,18 @@ class Fetcher:
             "sleep_history_factor": r.get("sleepHistoryFactorPercent"),
             "stress_history_factor": r.get("stressHistoryFactorPercent"),
             "recovery_time_h": (r.get("recoveryTime") / 60.0) if r.get("recoveryTime") else None,
+            # The percents above say how much each input weighed, these say
+            # which way it leaned. Together they turn a bare score into the
+            # sentence Garmin itself would write about it.
+            "feedback_long": r.get("feedbackLong"),
+            "sleep_score": r.get("sleepScore"),
+            "hrv_weekly_avg": r.get("hrvWeeklyAverage"),
+            "acwr_factor_feedback": r.get("acwrFactorFeedback"),
+            "hrv_factor_feedback": r.get("hrvFactorFeedback"),
+            "sleep_score_factor_feedback": r.get("sleepScoreFactorFeedback"),
+            "sleep_history_factor_feedback": r.get("sleepHistoryFactorFeedback"),
+            "stress_history_factor_feedback": r.get("stressHistoryFactorFeedback"),
+            "recovery_time_factor_feedback": r.get("recoveryTimeFactorFeedback"),
             "fetched_at": now(),
         })
 
@@ -565,18 +640,32 @@ class Fetcher:
         )
 
     def day_hill_score(self, day: str) -> None:
+        """Hill score, and the VO2max that rides along with it.
+
+        This endpoint carries vo2Max on days the max_metrics endpoint
+        answers with an empty list, which on the account this was traced on
+        (2026-08-16) is every day: 30 of 30 hill payloads had the value,
+        9 of 139 days had it in the column. So the write below happens even
+        when there is no hill score, and it leaves vo2max_running alone
+        when this payload has none rather than blanking what day_vo2max
+        may already have written.
+        """
         payload = self.call(day, "hill_score", self.api.get_hill_score, day)
         if not payload or not isinstance(payload, dict):
             return
-        if payload.get("overallScore") is None:
+        vo2 = payload.get("vo2MaxPreciseValue") or payload.get("vo2Max")
+        if payload.get("overallScore") is None and vo2 is None:
             return
         self.conn.execute(
-            "UPDATE days SET hill_score=%s, hill_strength=%s, hill_endurance=%s "
-            "WHERE date=%s",
+            "UPDATE days SET hill_score=COALESCE(%s, hill_score), "
+            "hill_strength=COALESCE(%s, hill_strength), "
+            "hill_endurance=COALESCE(%s, hill_endurance), "
+            "vo2max_running=COALESCE(%s, vo2max_running) WHERE date=%s",
             (
                 payload.get("overallScore"),
                 payload.get("strengthScore"),
                 payload.get("enduranceScore"),
+                vo2,
                 day,
             ),
         )
@@ -601,6 +690,12 @@ class Fetcher:
             "chronic_load": chronic,
             "acwr": acwr,
             "load_focus_json": json.dumps(balance, ensure_ascii=False) if balance else None,
+            # Both sit under a device id in the payload, which is why they
+            # are dug out rather than read off a path: the id changes with
+            # the watch and a path would break on the next one.
+            "balance_feedback": deep_find(payload, "trainingBalanceFeedbackPhrase"),
+            "fitness_trend": deep_find(payload, "fitnessTrend"),
+            "fitness_trend_sport": deep_find(payload, "fitnessTrendSport"),
             "fetched_at": now(),
         })
 
