@@ -34,8 +34,8 @@ behind what Garmin sends, and being behind used to mean the data was gone,
 because the only way back is to ask for a day the API no longer serves.
 
 So the answers are also kept whole, in `raw_payload`, one row per day and
-endpoint as `jsonb`. One day is about 25 payloads and roughly 50 KB stored,
-under 20 MB a year. It is written by the function every endpoint call
+endpoint as `jsonb`. One day is about 14 payloads and roughly 45 KB stored,
+some 16 MB a year. It is written by the function every endpoint call
 already passes through, so endpoints added later need no second edit.
 
 The point is what it does for a question no column anticipated:
@@ -57,8 +57,9 @@ a column.
 ## Weather (optional: the half Garmin does not hand over)
 
 Four numbers in this mirror cannot be read honestly without the weather.
-Deep sleep collapses on muggy nights and the sleep card alone calls that
-a bad night. Heart rate drifts upward in heat, so the same work at 30 °C
+Deep sleep can fall on a muggy night for reasons that have nothing to do
+with training, and the sleep card alone calls that a bad night. Heart
+rate drifts upward in heat, so the same work at 30 °C
 looks harder than it was and the load model reads it as fatigue. Sweat
 loss and the hydration goal are computed by Garmin with a weather input
 the dashboard never saw. Daytime heat lifts resting heart rate and
@@ -78,9 +79,11 @@ a Garmin session.
 
 Leave both empty and nothing happens: no request is made, no row is
 written, and the dashboard shows nothing about it. There is deliberately
-no default, because the coordinates are the one thing an installation
-sends to a third party. Open-Meteo receives a location and a date range,
-never health data, an account or a session.
+no default, because past Garmin itself these coordinates are the only
+thing about you an installation tells anybody. Open-Meteo receives a
+location and a date range, never health data, an account or a session.
+(The other outbound address, a push service, is woken by an empty POST
+and told nothing at all.)
 
 With more than one athlete on the installation, that pair is the
 fallback rather than the answer: an installation has one location and
@@ -94,11 +97,14 @@ the role it connects as has no rights in the schema the profiles live
 in.
 
 The dashboard says three things with it, in the load area: what warm
-nights did to deep sleep, what heat did to the pulse in circuit
-sessions, and what a hot day ahead has cost before. Everything past
-those three is the chat's. `query-health-data` reads `weather_hourly`
-like any other table, on the same rule every finding here follows:
-co-occurrence, not cause.
+nights went with in deep sleep, what heat did to the pulse in circuit
+sessions, and what a hot day ahead has cost before. All three compare
+your own nights and sessions against each other rather than against a
+population, and all three read the sky outside: a bedroom that is cooled
+or a session that ran indoors breaks the chain without saying so.
+Everything past those three is the chat's. `query-health-data` reads
+`weather_hourly` like any other table, on the same rule every finding
+here follows: co-occurrence, not cause.
 
 Only one location for the whole mirror. Garmin does report activity start
 coordinates, but the fetcher does not store them, and a per-session

@@ -5,13 +5,13 @@
 [![Release](https://img.shields.io/github/v/release/Imgrund/hybridlog?display_name=tag&label=release)](https://github.com/Imgrund/hybridlog/releases)
 [![MCP registry](https://img.shields.io/badge/MCP%20registry-io.github.Imgrund%2Fhybridlog-0a7ea4)](https://registry.modelcontextprotocol.io/v0/servers?search=io.github.Imgrund/hybridlog)
 
-Self-hosted MCP server on your own Garmin data. It mirrors what the watch
-records into a database you control, computes the models the watch does
-not (training load, muscle freshness, readiness in context), and hands
-all of it to a language model over stdio or HTTP, so the things Garmin
-cannot measure can be dictated into the chat instead of typed into a
-form. A dashboard comes with it: the body map, the training load, and the
-login the connector authenticates against.
+Self-hosted MCP server on your own Garmin data. It mirrors everything
+Garmin answers into a database you control, computes the models the watch
+does not (training load, muscle freshness, readiness in context), and
+hands all of it to a language model over stdio or HTTP, so the things
+Garmin cannot measure can be dictated into the chat instead of typed into
+a form. A dashboard comes with it: the body map, the training load, and
+the login the connector authenticates against.
 
 Running, lifting or both on the same day: the models do not care which.
 Sessions that alternate running with station work get a lap-by-lap
@@ -65,10 +65,17 @@ browser language unless the profile says otherwise.</sub>
   [python-garminconnect](https://github.com/cyberjunky/python-garminconnect)
   into one athlete's schema of a PostgreSQL database, which both of the
   above read through a connection that may only read it, and only that
-  athlete's.
+  athlete's. Each answer is also kept whole beside the columns read out of
+  it, so a field nobody has built a column for is still there to be asked
+  about, and a day Garmin Connect no longer serves is still in the mirror.
 
-There is no hosted instance. It runs on hardware you control, which is
-the point: it is a health record.
+There is no hosted instance, and that is the point: it is a health
+record. The Garmin session sits in a schema of your own database that no
+reader role can reach, so the SQL a model writes cannot ask for it, and
+no operator but you holds it. Past Garmin itself, two optional things
+reach out at all: the weather, which takes a pair of coordinates you fill
+in yourself, and notifications, where the push service is woken by an
+empty POST and never carries what it was about.
 
 ## The tools
 
@@ -90,6 +97,14 @@ Twelve tools and one prompt. The right-hand column is the switch at
 | `delete-symptom-tool` | takes one off again once it has healed | Log how you feel |
 | `give-feedback-tool` | a correction that becomes a standing guideline for the connector | Process feedback |
 | `weekly-report` (prompt) | drives the Sunday review; the report is the conversation's answer and is stored nowhere | Read health data |
+
+Most of them answer a question the app was built around. Two do not:
+`describe-schema` hands the model the mirror's own tables with the
+comments that say what each column means, and `query-health-data` runs
+the SELECT it writes from that. It is the difference between a set of
+reports and a database somebody can think in, and it is what makes
+keeping the raw answers worth the disk: a field nobody has promoted to a
+column is still one question away.
 
 Reading is the whole of it, with one documented exception. Symptoms are
 the only thing the chat may write, and they go to the app's own schema,

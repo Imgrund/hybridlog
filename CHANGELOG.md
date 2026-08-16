@@ -7,6 +7,39 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **The README now says what the mirror actually is.** It kept describing
+  a set of readings when the thing underneath is a database that holds
+  Garmin's answers whole: a field nobody has built a column for is still
+  one question away, and a day Garmin Connect no longer serves is still
+  here. The two tools that make that reachable, `describe-schema` and
+  `query-health-data`, are named as what they are rather than listed as
+  two more rows. "No hosted instance" is now a sentence anyone can check:
+  the Garmin session is in a schema of your own database that no reader
+  role can reach, and past Garmin the only things that reach out are the
+  weather, on coordinates you type in yourself, and a push that wakes a
+  device with an empty POST.
+- **Tagging a release now lists it in the MCP registry.** That was a hand
+  step after the tag, and a hand step after the tag gets skipped: 0.1.4
+  shipped its image while the registry went on describing 0.1.3. The
+  release workflow does it, authenticating over GitHub Actions OIDC rather
+  than a stored secret, and refuses to publish when `server.json` names a
+  version other than the tag being released.
+
+### Fixed
+
+- **The size of `raw_payload` was quoted too high.** Measured over one
+  day it read as 25 payloads and 50 KB; over eighty it is 14 payloads and
+  45 KB, so a year of one athlete is about 16 MB rather than under 20 MB.
+  The schema comment and `docs/recording.md` carried the first number.
+- **The weather documentation claimed more than the code computes.** It
+  said deep sleep collapses on muggy nights, where `Weather.php` only
+  contrasts the athlete's own nights by dew point and the card says "went
+  with". It now reads as the co-occurrence it is, and says out loud that a
+  cooled bedroom or an indoor session breaks the chain, since all three
+  weather findings read the sky outside.
+
 ## [0.1.4] - 2026-08-16
 
 ### Added
