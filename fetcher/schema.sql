@@ -57,6 +57,38 @@ BEGIN
 END
 $$;
 
+-- The two-argument round() Postgres does not define for double precision.
+-- Nearly every measurement column below is double precision, and the SQL
+-- that reads them through query-health-data is written by a language model
+-- whose habit, from SQLite and MySQL, is round(expr, 1). Postgres has that
+-- only for numeric, so each such query died with 42883 and spent its retry
+-- on a cast the mirror could have absorbed. One overload in the mirror's
+-- own schema absorbs it: the search_path makes it visible, the exact
+-- argument match beats pg_catalog's numeric form, and the explicit
+-- round((expr)::numeric, 1) keeps resolving to pg_catalog as before.
+--
+-- Guarded rather than CREATE OR REPLACE: where app and fetcher connect as
+-- different roles, whichever ran this file first owns the function, and a
+-- REPLACE from the other would fail on ownership.
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT FROM pg_proc p
+        JOIN pg_namespace n ON n.oid = p.pronamespace
+        WHERE n.nspname = '{mirror}' AND p.proname = 'round'
+    ) THEN
+        CREATE FUNCTION {mirror}.round(v double precision, places integer)
+        RETURNS numeric
+        LANGUAGE sql IMMUTABLE STRICT PARALLEL SAFE
+        AS $round$ SELECT pg_catalog.round(v::numeric, places) $round$;
+
+        COMMENT ON FUNCTION {mirror}.round(double precision, integer) IS
+            'the round(expr, n) Postgres only has for numeric, so '
+            'model-written SQL runs as written instead of failing on a cast';
+    END IF;
+END
+$$;
+
 CREATE TABLE IF NOT EXISTS {mirror}.days (
     date text PRIMARY KEY,
     steps integer,
