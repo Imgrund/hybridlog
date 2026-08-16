@@ -2,10 +2,13 @@
 
 hybridlog is an MCP server on your own Garmin mirror, in two transports:
 stdio for a client on this machine, streamable HTTP with OAuth for one
-that reaches it over the network. The [README](../README.md) has the
-address and the shortest path per client. This is the long version: every
-client's steps, what the server exposes, and what to watch on a host that
-is reachable from outside.
+that reaches it over the network. What it exposes is the mirror itself,
+not a dozen fixed reports on top of it: the tools answer the questions the
+app was built around, and free SQL over the same schema answers the ones
+it was not. The [README](../README.md) has the address and the shortest
+path per client. This is the long version: every client's steps, what the
+server exposes, and what to watch on a host that is reachable from
+outside.
 
 ## Hosted: claude.ai, ChatGPT, anything that speaks HTTP
 

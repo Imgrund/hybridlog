@@ -498,10 +498,10 @@ COMMENT ON TABLE {mirror}.fetch_log IS
 -- costs nothing here and buys operators like ->> and @> for a model
 -- writing its own SQL.
 --
--- About 300 KB of JSON a day, which TOAST stores as roughly 50 KB
--- (measured 2026-08-16, 25 payloads), so a year of one athlete is under
--- 20 MB. Deleting old rows is safe: it costs history nobody has asked for
--- yet, never a column above.
+-- About 14 payloads and 200 KB of JSON a day, which TOAST stores as
+-- roughly 45 KB, so a year of one athlete is about 16 MB (measured
+-- 2026-08-16 over 80 days of one mirror). Deleting old rows is safe: it
+-- costs history nobody has asked for yet, never a column above.
 CREATE TABLE IF NOT EXISTS {mirror}.raw_payload (
     date text,
     kind text,

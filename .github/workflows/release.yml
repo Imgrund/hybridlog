@@ -10,17 +10,20 @@ on:
     tags: ['v*.*.*']
   workflow_dispatch:
 
-# The registry is the only thing this writes to; the repository itself it
-# only reads. GITHUB_TOKEN carries whatever is granted here and nothing
-# else, so the narrower pair is also what limits the damage a compromised
-# action in the chain below could do.
-permissions:
-  contents: read
-  packages: write
+# Set per job rather than here, so neither job carries a permission the
+# other one needs: the image job may write packages and cannot mint an
+# OIDC token, the registry job the other way round. GITHUB_TOKEN carries
+# whatever is granted and nothing else, which is also what limits the
+# damage a compromised action in either chain could do.
+permissions: {}
 
 jobs:
   image:
     runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      packages: write
 
     steps:
       - uses: actions/checkout@v7
@@ -100,3 +103,54 @@ jobs:
           # resolving them again under emulation.
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+  # Listing the server in the official MCP registry used to be a hand step
+  # after the tag, and a hand step after the tag is one that gets skipped:
+  # 0.1.4 shipped its image and left the registry describing 0.1.3. This
+  # job is that step, run by the same event that builds the image.
+  registry:
+    runs-on: ubuntu-latest
+    needs: image
+    # Only a real tag. Started by hand from a branch, server.json carries
+    # whatever version main is on, and publishing that would announce a
+    # release nobody cut.
+    if: startsWith(github.ref, 'refs/tags/v')
+
+    permissions:
+      contents: read
+      # The whole point of github-oidc: the runner mints a short-lived
+      # token the registry verifies against this repository, so ownership
+      # is proven without a secret living here.
+      id-token: write
+
+    steps:
+      - uses: actions/checkout@v7
+
+      # Pinned rather than latest, so a release of the publisher cannot
+      # change what a tag of this repository does.
+      - name: Install mcp-publisher
+        run: |
+          curl -fsSL "https://github.com/modelcontextprotocol/registry/releases/download/v${PUBLISHER_VERSION}/mcp-publisher_linux_amd64.tar.gz" \
+            | tar -xz mcp-publisher
+          ./mcp-publisher --version
+        env:
+          PUBLISHER_VERSION: 1.8.1
+
+      # ServerManifestTest holds server.json against the image tag it
+      # names, which catches the two drifting apart but not both of them
+      # lagging the tag being released. Without this, a release whose
+      # version bump was forgotten publishes the previous version's
+      # manifest under a green build.
+      - name: The manifest must describe the tag being released
+        run: |
+          want="${GITHUB_REF_NAME#v}"
+          have="$(python3 -c 'import json;print(json.load(open("server.json"))["version"])')"
+          if [ "$want" != "$have" ]; then
+            echo "::error::tag $GITHUB_REF_NAME wants server.json version $want, found $have"
+            exit 1
+          fi
+
+      - name: Publish to the MCP registry
+        run: |
+          ./mcp-publisher login github-oidc
+          ./mcp-publisher publish
