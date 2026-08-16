@@ -89,6 +89,30 @@ host rather than a path.
 </details>
 
 <details>
+<summary><b>Le Chat (Mistral)</b></summary>
+
+**Connectors → + Add Connector**, then the **Custom MCP Connector** tab:
+name it, paste the address, **Connect**, sign in. Le Chat reads the
+authentication off the server rather than asking, and should settle on
+OAuth 2.1 with dynamic client registration, which is what this server
+speaks.
+
+Adding a connector is an administrator right. On the Free, Pro and
+Student plans the account owner is the administrator, so on a personal
+account that is you.
+
+Custom connectors do not carry prompt templates or resources yet, so the
+`weekly-report` prompt is missing in Le Chat. All twelve tools work as
+they do everywhere else.
+
+The callback lands on `callback.mistral.ai`, not on the `chat.mistral.ai`
+in the address bar, and Mistral documents neither. The entry in
+`config/mcp.php` comes from observed registrations rather than from a
+published document, so if a future Le Chat is refused, read the
+`redirect_uri` it actually sent instead of guessing at the other host.
+</details>
+
+<details>
 <summary><b>LM Studio, against a deployed instance</b></summary>
 
 Right sidebar → **Program** → **Install → Edit mcp.json**, then the

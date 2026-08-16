@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Le Chat connects. Mistral's custom MCP connectors speak streamable HTTP
+  and OAuth 2.1 with dynamic client registration, which is what the hosted
+  transport already served, so the whole of it is one callback host in
+  `config/mcp.php` next to the steps at `/connect` and in the guide. That
+  host is `callback.mistral.ai`, which Mistral documents nowhere and which
+  is not the `chat.mistral.ai` of the address bar, so the suite pins both
+  the spelling that works and the one that must keep failing. Custom
+  connectors carry no prompt templates yet: the `weekly-report` prompt is
+  absent in Le Chat, the twelve tools are not.
+
 ## [0.1.2] - 2026-08-16
 
 ### Fixed

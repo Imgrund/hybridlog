@@ -139,6 +139,8 @@
                         <label class="client-choice" for="client-chatgpt">ChatGPT</label>
                         <input type="radio" name="setup-client" id="client-langdock">
                         <label class="client-choice" for="client-langdock">Langdock</label>
+                        <input type="radio" name="setup-client" id="client-lechat">
+                        <label class="client-choice" for="client-lechat">Le Chat</label>
                         <input type="radio" name="setup-client" id="client-lmstudio">
                         <label class="client-choice" for="client-lmstudio">LM Studio</label>
                         <input type="radio" name="setup-client" id="client-local">
@@ -202,6 +204,24 @@
                         <li>{!! __('<b>Test connection</b> lists the tools; pick the ones you want and save.') !!}</li>
                     </ol>
                     <p class="mt-2 text-xs text-muted">{{ __('Creating an integration needs an Editor or Admin seat. In a shared workspace an admin adds it once and shares it.') }}</p>
+                </div>
+
+                <div class="client-panel mt-4 text-sm text-secondary leading-relaxed" data-client="lechat">
+                    <ol class="list-decimal space-y-1 pl-5">
+                        <li>{!! __('<b>Connectors</b> → <b>+ Add Connector</b> → the <b>Custom MCP Connector</b> tab.') !!}</li>
+                        <li>{{ __('Give it a name and paste the address:') }} <code class="text-primary">{{ $mcpUrl }}</code></li>
+                        {{-- Le Chat reads the sign-in off the server rather
+                             than asking, but it does show what it found, and
+                             a reader who sees three options wants to know
+                             which one is theirs. --}}
+                        <li>{!! __('<b>Connect</b>, then sign in. It works the authentication out on its own and should land on <b>OAuth 2.1</b>.') !!}</li>
+                    </ol>
+                    <p class="mt-2 text-xs text-muted">{{ __('Adding a connector is an administrator right. On the Free, Pro and Student plans the account owner is the administrator, so that is you.') }}</p>
+                    {{-- Named here rather than left to be discovered: the
+                         weekly report is the one thing this server offers
+                         that Le Chat has no way to show, and its absence
+                         otherwise reads as a broken connection. --}}
+                    <p class="mt-2 text-xs text-muted">{{ __('Le Chat does not do prompt templates yet, so the weekly report is missing there. All twelve tools work.') }}</p>
                 </div>
 
                 <div class="client-panel mt-4 text-sm text-secondary leading-relaxed" data-client="lmstudio">

@@ -499,6 +499,7 @@ body.viz-root {
     .client-picker:has(#client-claude:checked) .client-panel[data-client='claude'],
     .client-picker:has(#client-chatgpt:checked) .client-panel[data-client='chatgpt'],
     .client-picker:has(#client-langdock:checked) .client-panel[data-client='langdock'],
+    .client-picker:has(#client-lechat:checked) .client-panel[data-client='lechat'],
     .client-picker:has(#client-lmstudio:checked) .client-panel[data-client='lmstudio'],
     .client-picker:has(#client-local:checked) .client-panel[data-client='local'] {
         display: block;
