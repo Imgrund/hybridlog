@@ -61,7 +61,11 @@ class GarminHealthServer extends Server
         'drifted from first lap to last. A race that alternates the two is what it was built for (a '.
         'HYROX race or simulation is eight 1 km runs with a station between each), and it reads any '.
         'lapped session just as well. Use query-health-data-tool (single SELECT) for '.
-        'everything else. When the user asks about "now" and last_fetch predates their latest '.
+        'everything else. When a question falls outside every column, it is often still answerable: '.
+        'the raw_payload table holds Garmin\'s untouched answer per day and endpoint as jsonb, so '.
+        'reach for it rather than reporting that the mirror does not track something. Write '.
+        'jsonb_exists(payload, \'key\') and never payload ? \'key\', which dies with a syntax error '.
+        'about $1. When the user asks about "now" and last_fetch predates their latest '.
         'workout, call refresh-data-tool first: it waits until the sync is done and answers '.
         'still_running only when the run needs longer than one call may take, then call it again '.
         'to keep waiting. Afterwards re-query and answer with the fresh numbers; never end your '.

@@ -31,6 +31,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **A table added to the schema could stay invisible to the reader.** The
+  mirror check asked only whether the tenant's reader held `usage` on the
+  schema, which a new table says nothing about. Where the fetcher and the
+  app connect as different roles, the default privileges in `tenant.sql` do
+  not cover it, and the symptom is a table that exists, is listed by
+  `describe-schema`, and refuses every select. The check now asks after the
+  tables too, so the next request repairs it.
 - **HRV across the night was never stored.** The column read `avgSleepHRV`
   and `avgOvernightHrv` is what Garmin sends, so `sleep.avg_sleep_hrv` was
   null in every row since the first fetch while the number sat in every

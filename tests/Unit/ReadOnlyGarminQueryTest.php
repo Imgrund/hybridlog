@@ -276,4 +276,44 @@ class ReadOnlyGarminQueryTest extends TestCase
 
         $this->reader()->run("\n\t  delete from days");
     }
+
+    public function test_the_json_operators_raw_payload_needs_are_not_blocked(): void
+    {
+        // raw_payload keeps every Garmin answer whole so that a field no
+        // column covers is still reachable, and reachable means through
+        // these. The blocklist is written against names, and `->>` and `@>`
+        // are punctuation, so nothing there should catch them: this pins
+        // that, because a rule added later for some other reason could take
+        // the safety net out without anyone touching the table.
+        $this->mirror()->statement('create table raw_payload (date text, kind text, payload jsonb)');
+        $this->mirror()->statement(
+            "insert into raw_payload values ('2026-08-16', 'sleep', '{\"avgOvernightHrv\": 77}'::jsonb)"
+        );
+
+        $result = $this->reader()->run(
+            "select payload->>'avgOvernightHrv' as hrv, jsonb_typeof(payload) as t"
+            ." from raw_payload where kind = 'sleep'"
+            ." and jsonb_exists(payload, 'avgOvernightHrv')"
+            ." and payload @> '{\"avgOvernightHrv\": 77}'::jsonb"
+        );
+
+        $this->assertSame('77', $result['rows'][0]['hrv']);
+        $this->assertSame('object', $result['rows'][0]['t']);
+    }
+
+    public function test_the_json_question_mark_operator_is_the_one_that_cannot_be_written(): void
+    {
+        // Not a rule of this class: PDO parses `?` as a bind placeholder
+        // before Postgres ever sees it, so `payload ? 'key'` arrives as
+        // `payload $1 'key'` and dies with a syntax error naming $1, which
+        // says nothing about the cause. jsonb_exists() is the same operator
+        // spelled as a function and the table comment sends readers there.
+        // Pinned so that the day PDO or the driver changes this, the note
+        // in schema.sql is known to be stale rather than merely suspected.
+        $this->mirror()->statement('create table raw_payload (payload jsonb)');
+
+        $this->expectException(PDOException::class);
+
+        $this->reader()->run("select 1 from raw_payload where payload ? 'kind'");
+    }
 }

@@ -110,4 +110,47 @@ class MirrorSchemaHealTest extends TestCase
         // next rebuilds from scratch instead of trusting it.
         CreatesMirrorSchema::mirrorSchemaWasReplaced($tenant);
     }
+
+    public function test_a_table_the_reader_cannot_read_is_granted_on_the_next_ensure(): void
+    {
+        $tenant = $this->athlete()->id;
+        $schema = Mirror::schema($tenant);
+
+        Mirror::ensure($tenant);
+        Mirror::unpin();
+        $db = DB::connection('garmin');
+
+        // What a mirror looks like when schema.sql grew a table after the
+        // grants were written: USAGE on the schema is intact, so the old
+        // check called it readable, while the table itself is reachable by
+        // nobody. describe-schema would list it and every select against it
+        // would be refused, which reads as a broken tool rather than as a
+        // missing GRANT.
+        $reader = Mirror::reader($tenant);
+        $db->unprepared("revoke select on {$schema}.raw_payload from {$reader}");
+
+        $this->assertFalse($this->readerMayRead($db, $reader, $schema, 'raw_payload'));
+
+        // ensure() is what every request already calls, so the repair costs
+        // nobody an extra step. forget() only clears the in-process memo of
+        // what is already provisioned, which is what makes it look again.
+        Mirror::forget();
+        Mirror::ensure($tenant);
+        Mirror::unpin();
+
+        $this->assertTrue(
+            $this->readerMayRead($db, $reader, $schema, 'raw_payload'),
+            'ensure() left a table the tenant reader cannot select from'
+        );
+
+        CreatesMirrorSchema::mirrorSchemaWasReplaced($tenant);
+    }
+
+    private function readerMayRead(mixed $db, string $reader, string $schema, string $table): bool
+    {
+        return (bool) $db->selectOne(
+            "select has_table_privilege(?, ?, 'select') as ok",
+            [$reader, "{$schema}.{$table}"]
+        )->ok;
+    }
 }

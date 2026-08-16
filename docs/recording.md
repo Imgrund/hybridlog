@@ -26,6 +26,34 @@ apart (seen in practice: morning 86 with 0 h open, actual 35 with 51 h).
 now-statement (the morning briefing, the health alerts and the MCP
 summary) prefers it over the frozen morning value.
 
+### What is kept, and what is kept whole
+
+Every table in the mirror is a reading of Garmin's payloads: a column is
+there because someone found a use for the field. That reading is always
+behind what Garmin sends, and being behind used to mean the data was gone,
+because the only way back is to ask for a day the API no longer serves.
+
+So the answers are also kept whole, in `raw_payload`, one row per day and
+endpoint as `jsonb`. One day is about 25 payloads and roughly 50 KB stored,
+under 20 MB a year. It is written by the function every endpoint call
+already passes through, so endpoints added later need no second edit.
+
+The point is what it does for a question no column anticipated:
+`query-health-data` reads it like any other table, and a field nobody has
+promoted to a column yet is still answerable rather than lost.
+
+```sql
+-- what a payload actually contains
+select jsonb_object_keys(payload) from raw_payload where kind = 'sleep' limit 20;
+```
+
+One trap worth knowing: write `jsonb_exists(payload, 'key')`, never
+`payload ? 'key'`. PDO reads the question mark as a bind placeholder before
+PostgreSQL sees it, and the error names `$1` rather than the operator.
+
+Deleting old rows is safe. It costs history nobody has asked for yet, never
+a column.
+
 ## Weather (optional: the half Garmin does not hand over)
 
 Four numbers in this mirror cannot be read honestly without the weather.

@@ -513,8 +513,12 @@ CREATE TABLE IF NOT EXISTS {mirror}.raw_payload (
 COMMENT ON TABLE {mirror}.raw_payload IS
     'Garmin''s untouched answer per day and endpoint, kept so that a field
 no column covers is still a question this mirror can answer. `kind` matches
-fetch_log.kind (stats, sleep, hrv, readiness, training_status, spo2, ...).
-Start at: SELECT jsonb_object_keys(payload) FROM raw_payload WHERE kind = ''sleep'' LIMIT 1';
+fetch_log.kind (stats, sleep, hrv, readiness, training_status, spo2, ...),
+plus one row per activity for its sets, laps and heart-rate zones.
+Start at: SELECT jsonb_object_keys(payload) FROM raw_payload WHERE kind = ''sleep'' LIMIT 1
+One trap: write jsonb_exists(payload, ''key''), never payload ? ''key''. The
+question mark is read as a bind placeholder before PostgreSQL sees it, and
+the error that comes back names $1 and not the operator.';
 
 CREATE TABLE IF NOT EXISTS {mirror}.device_sync (
     device_key text PRIMARY KEY,
