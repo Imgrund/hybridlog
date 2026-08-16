@@ -89,26 +89,37 @@ host rather than a path.
 </details>
 
 <details>
-<summary><b>Le Chat (Mistral)</b></summary>
+<summary><b>Le Chat / Vibe (Mistral)</b></summary>
 
-**Connectors → + Add Connector**, then the **Custom MCP Connector** tab:
-name it, paste the address, **Connect**, sign in. Le Chat reads the
-authentication off the server rather than asking, and should settle on
-OAuth 2.1 with dynamic client registration, which is what this server
-speaks.
+Mistral renamed Le Chat to **Vibe**. The interface says Vibe, the
+documentation still says Le Chat, and both mean the same product.
+
+**Konnektoren → + Add Connector**, then the **Custom MCP Connector** tab:
+name it, paste the address, **Connect**, sign in. It reads the
+authentication off the server rather than asking, and settles on OAuth
+2.1 with dynamic client registration, which is what this server speaks.
+
+Mistral Studio (`console.mistral.ai`) shows the same connectors under
+**Connectors**, and a connector added in either place is connected in
+both. Either route works; the Studio one additionally lists the tools it
+received, which makes it the better place to check that a connection is
+actually carrying something.
 
 Adding a connector is an administrator right. On the Free, Pro and
 Student plans the account owner is the administrator, so on a personal
 account that is you.
 
 Custom connectors do not carry prompt templates or resources yet, so the
-`weekly-report` prompt is missing in Le Chat. All twelve tools work as
-they do everywhere else.
+`weekly-report` prompt is missing there. All twelve tools arrive, sorted
+into interactive and read-only, each with a switch of Mistral's own. That
+switch and the one at `/connect` are separate: either can withhold a
+tool, and the server's is the one that still applies when the client's
+says yes.
 
 The callback lands on `callback.mistral.ai`, not on the `chat.mistral.ai`
 in the address bar, and Mistral documents neither. The entry in
 `config/mcp.php` comes from observed registrations rather than from a
-published document, so if a future Le Chat is refused, read the
+published document, so if a future version is refused, read the
 `redirect_uri` it actually sent instead of guessing at the other host.
 </details>
 

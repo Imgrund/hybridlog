@@ -7,17 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.3] - 2026-08-16
+
 ### Added
 
-- Le Chat connects. Mistral's custom MCP connectors speak streamable HTTP
-  and OAuth 2.1 with dynamic client registration, which is what the hosted
-  transport already served, so the whole of it is one callback host in
-  `config/mcp.php` next to the steps at `/connect` and in the guide. That
-  host is `callback.mistral.ai`, which Mistral documents nowhere and which
-  is not the `chat.mistral.ai` of the address bar, so the suite pins both
-  the spelling that works and the one that must keep failing. Custom
-  connectors carry no prompt templates yet: the `weekly-report` prompt is
-  absent in Le Chat, the twelve tools are not.
+- Mistral connects, from Le Chat and from Studio alike. Their custom MCP
+  connectors speak streamable HTTP and OAuth 2.1 with dynamic client
+  registration, which is what the hosted transport already served, so the
+  whole of it is one callback host in `config/mcp.php` next to the steps
+  at `/connect` and in the guide. That host is `callback.mistral.ai`,
+  which Mistral documents nowhere and which is not the `chat.mistral.ai`
+  of the address bar, so the suite pins both the spelling that works and
+  the one that must keep failing. Verified against a real connector: the
+  registration goes through, the twelve tools arrive, and a connector
+  added in either place is connected in both. Custom connectors carry no
+  prompt templates yet, so the `weekly-report` prompt is absent there
+  while the tools are not.
+
+### Changed
+
+- The client is named *Le Chat / Vibe* wherever it is offered. Mistral
+  renamed the product to Vibe while their own documentation still says Le
+  Chat, and somebody holding one of the two names has to find it under
+  the other.
 
 ## [0.1.2] - 2026-08-16
 
@@ -170,7 +182,8 @@ history that led to it.
 - English interface with a German translation, following the browser language
   unless the profile says otherwise.
 
-[Unreleased]: https://github.com/Imgrund/hybridlog/compare/v0.1.2...HEAD
+[Unreleased]: https://github.com/Imgrund/hybridlog/compare/v0.1.3...HEAD
+[0.1.3]: https://github.com/Imgrund/hybridlog/compare/v0.1.2...v0.1.3
 [0.1.2]: https://github.com/Imgrund/hybridlog/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/Imgrund/hybridlog/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/Imgrund/hybridlog/releases/tag/v0.1.0

@@ -56,8 +56,8 @@ browser language unless the profile says otherwise.</sub>
 - **MCP server**: twelve tools and one prompt over `laravel/mcp`, in two
   transports. Local (stdio) for Claude Code and Claude Desktop, hosted
   (streamable HTTP with OAuth 2.1, PKCE and dynamic client registration)
-  for claude.ai, ChatGPT, Mistral's Le Chat, LM Studio and anything else
-  that speaks it.
+  for claude.ai, ChatGPT, Mistral's Le Chat (renamed Vibe), LM Studio and
+  anything else that speaks it.
 - **Dashboard**: Laravel + Alpine + Chart.js. It draws the body map and
   the training load, and it is also the login the connector authenticates
   against and the place where you set what the chat may see.

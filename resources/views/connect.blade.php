@@ -140,7 +140,12 @@
                         <input type="radio" name="setup-client" id="client-langdock">
                         <label class="client-choice" for="client-langdock">Langdock</label>
                         <input type="radio" name="setup-client" id="client-lechat">
-                        <label class="client-choice" for="client-lechat">Le Chat</label>
+                        {{-- Both names on one label: Mistral renamed the
+                             product to Vibe, its own documentation still
+                             says Le Chat, and whoever is looking for one
+                             of the two must not conclude their client is
+                             missing from the list. --}}
+                        <label class="client-choice" for="client-lechat">Le Chat / Vibe</label>
                         <input type="radio" name="setup-client" id="client-lmstudio">
                         <label class="client-choice" for="client-lmstudio">LM Studio</label>
                         <input type="radio" name="setup-client" id="client-local">
@@ -207,21 +212,22 @@
                 </div>
 
                 <div class="client-panel mt-4 text-sm text-secondary leading-relaxed" data-client="lechat">
-                    <ol class="list-decimal space-y-1 pl-5">
-                        <li>{!! __('<b>Connectors</b> → <b>+ Add Connector</b> → the <b>Custom MCP Connector</b> tab.') !!}</li>
+                    <p>{{ __('Mistral renamed Le Chat to Vibe. The interface says Vibe, their documentation still says Le Chat, and both are this same set of steps.') }}</p>
+                    <ol class="mt-2 list-decimal space-y-1 pl-5">
+                        <li>{!! __('<b>Kontext</b> → <b>Konnektoren</b> → <b>+ Add Connector</b> → the <b>Custom MCP Connector</b> tab.') !!}</li>
                         <li>{{ __('Give it a name and paste the address:') }} <code class="text-primary">{{ $mcpUrl }}</code></li>
-                        {{-- Le Chat reads the sign-in off the server rather
-                             than asking, but it does show what it found, and
-                             a reader who sees three options wants to know
+                        {{-- It reads the sign-in off the server rather than
+                             asking, but it does show what it found, and a
+                             reader who sees three options wants to know
                              which one is theirs. --}}
                         <li>{!! __('<b>Connect</b>, then sign in. It works the authentication out on its own and should land on <b>OAuth 2.1</b>.') !!}</li>
                     </ol>
                     <p class="mt-2 text-xs text-muted">{{ __('Adding a connector is an administrator right. On the Free, Pro and Student plans the account owner is the administrator, so that is you.') }}</p>
                     {{-- Named here rather than left to be discovered: the
                          weekly report is the one thing this server offers
-                         that Le Chat has no way to show, and its absence
+                         that Mistral has no way to show, and its absence
                          otherwise reads as a broken connection. --}}
-                    <p class="mt-2 text-xs text-muted">{{ __('Le Chat does not do prompt templates yet, so the weekly report is missing there. All twelve tools work.') }}</p>
+                    <p class="mt-2 text-xs text-muted">{{ __('Mistral does not do prompt templates yet, so the weekly report is missing there. All twelve tools arrive, each with a switch of its own next to the ones here.') }}</p>
                 </div>
 
                 <div class="client-panel mt-4 text-sm text-secondary leading-relaxed" data-client="lmstudio">
