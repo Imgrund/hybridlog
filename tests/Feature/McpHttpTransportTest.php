@@ -171,21 +171,22 @@ class McpHttpTransportTest extends TestCase
             'redirect_uris' => ['https://app.langdock.com.evil.example/callback'],
         ])->assertStatus(400)->assertJsonPath('error', 'invalid_redirect_uri');
 
-        // Le Chat registers under this name and takes delivery on
-        // callback.mistral.ai, a host Mistral documents nowhere. Both
-        // strings are here so the next reader can see what the allowlist
-        // entry is for rather than inferring it from a domain that looks
-        // like a slip of the pen.
+        // Mistral registers under this name, from Le Chat (since renamed
+        // Vibe) and from Studio alike, and takes delivery on
+        // callback.mistral.ai, a host it documents nowhere. Both strings
+        // are here so the next reader can see what the allowlist entry is
+        // for rather than inferring it from a domain that looks like a
+        // slip of the pen.
         $this->postJson('/oauth/register', [
             'client_name' => 'mistral-mcp-client',
             'redirect_uris' => ['https://callback.mistral.ai/v1/integrations_auth/oauth2_callback'],
         ])->assertStatus(201);
 
-        // chat.mistral.ai is where Le Chat is used, not where its codes are
-        // delivered. Pinned as a refusal so widening the entry to the whole
-        // of mistral.ai has to be a deliberate act.
+        // chat.mistral.ai is where the chat is used, not where its codes
+        // are delivered. Pinned as a refusal so widening the entry to the
+        // whole of mistral.ai has to be a deliberate act.
         $this->postJson('/oauth/register', [
-            'client_name' => 'Not Le Chat',
+            'client_name' => 'Not Mistral',
             'redirect_uris' => ['https://chat.mistral.ai/mcp/callback'],
         ])->assertStatus(400)->assertJsonPath('error', 'invalid_redirect_uri');
     }
