@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **`round(expr, 1)` now simply works in `query-health-data`.** Nearly
+  every measurement column is double precision, and Postgres defines the
+  two-argument `round()` only for numeric, so the single most natural
+  line of SQL a model writes against this mirror died with an error and
+  spent its retry on a cast. The mirror now ships that overload in its
+  own schema (`fetcher/schema.sql`, so every fetch carries it to
+  existing installations); the explicit `round((expr)::numeric, 1)`
+  keeps resolving to Postgres' own function as before. The schema notes
+  and the query error only mention the cast on a mirror the fetcher has
+  not touched since — asked of the mirror, not assumed.
+- **A column that does not exist now gets answered with the ones that
+  do.** An invented column name usually recombines real fragments
+  (`sleep_factor_feedback` for `sleep_score_factor`), which is exactly
+  the case Postgres' own "Perhaps you meant" stays silent on, so the
+  model's retry was another guess. The error now names the closest
+  existing columns, ranked by shared name fragments, with tables the
+  athlete has switched off hidden from the list exactly as
+  `describe-schema` hides them.
+
 ## [0.1.5] - 2026-08-16
 
 ### Changed
