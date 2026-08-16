@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.6] - 2026-08-16
+
 ### Fixed
 
 - **`round(expr, 1)` now simply works in `query-health-data`.** Nearly
@@ -284,7 +286,8 @@ history that led to it.
 - English interface with a German translation, following the browser language
   unless the profile says otherwise.
 
-[Unreleased]: https://github.com/Imgrund/hybridlog/compare/v0.1.5...HEAD
+[Unreleased]: https://github.com/Imgrund/hybridlog/compare/v0.1.6...HEAD
+[0.1.6]: https://github.com/Imgrund/hybridlog/compare/v0.1.5...v0.1.6
 [0.1.5]: https://github.com/Imgrund/hybridlog/compare/v0.1.4...v0.1.5
 [0.1.4]: https://github.com/Imgrund/hybridlog/compare/v0.1.3...v0.1.4
 [0.1.3]: https://github.com/Imgrund/hybridlog/compare/v0.1.2...v0.1.3
