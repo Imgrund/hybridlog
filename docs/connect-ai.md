@@ -124,6 +124,13 @@ in the address bar, and Mistral documents neither. The entry in
 `config/mcp.php` comes from observed registrations rather than from a
 published document, so if a future version is refused, read the
 `redirect_uri` it actually sent instead of guessing at the other host.
+
+Studio's **connector debugger** walks the same twelve steps and shows
+where one fails, which makes it the first thing to reach for when a
+connection will not come up. It takes delivery on a third host again,
+`console.mistral.ai/build/connectors/debugger/oauth-callback`, listed
+alongside the other one. Its own registration is separate from Le Chat's,
+so a refusal there says nothing about the connector in the product.
 </details>
 
 <details>

@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **Mistral's connector debugger can register now.** Le Chat and Studio
+  take delivery on `callback.mistral.ai`, which the allowlist has carried
+  since the day Le Chat was let in, but the debugger in the console comes
+  back to a host of its own,
+  `console.mistral.ai/build/connectors/debugger/oauth-callback`. It was
+  refused at step 6 of its own twelve with `redirect_uris.0 is not a
+  permitted redirect domain`, so the one tool built to diagnose a
+  connection could not reach the connection it was pointed at, while Le
+  Chat next to it worked. Both hosts are listed now and both are pinned in
+  the transport test under the client names they arrive with, so the next
+  reader can tell them apart.
+
 ## [0.1.6] - 2026-08-16
 
 ### Fixed
