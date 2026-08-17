@@ -33,6 +33,13 @@ return [
     | actually sent before editing this line, because guessing at the
     | other host is how it stays broken.
     |
+    | Mistral's connector debugger is a third host again: it comes back to
+    | the console it runs in, under
+    | console.mistral.ai/build/connectors/debugger/oauth-callback. Le Chat
+    | never touches that one, so without it a connector works in the
+    | product while the single tool built to diagnose it is turned away at
+    | registration, which is exactly how it read on a sister installation.
+    |
     | A client that is not listed cannot register, and the refusal is a 400
     | with error=invalid_redirect_uri. Adding one means adding its callback
     | host here, nothing else. Each is matched as a prefix with a trailing
@@ -47,6 +54,7 @@ return [
         'https://chatgpt.com',
         'https://app.langdock.com',
         'https://callback.mistral.ai',
+        'https://console.mistral.ai',
         'http://localhost',
     ],
 

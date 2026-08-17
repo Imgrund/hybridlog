@@ -182,6 +182,15 @@ class McpHttpTransportTest extends TestCase
             'redirect_uris' => ['https://callback.mistral.ai/v1/integrations_auth/oauth2_callback'],
         ])->assertStatus(201);
 
+        // Mistral's connector debugger comes back to the console it runs
+        // in, a third host again. Le Chat never touches it, so without this
+        // entry the connector works in the product while the one tool built
+        // to diagnose it is refused before the consent screen.
+        $this->postJson('/oauth/register', [
+            'client_name' => 'MCP Debugger',
+            'redirect_uris' => ['https://console.mistral.ai/build/connectors/debugger/oauth-callback'],
+        ])->assertStatus(201);
+
         // chat.mistral.ai is where the chat is used, not where its codes
         // are delivered. Pinned as a refusal so widening the entry to the
         // whole of mistral.ai has to be a deliberate act.
