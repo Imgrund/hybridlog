@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.7] - 2026-08-17
+
 ### Fixed
 
 - **Mistral's connector debugger can register now.** Le Chat and Studio
@@ -300,7 +302,8 @@ history that led to it.
 - English interface with a German translation, following the browser language
   unless the profile says otherwise.
 
-[Unreleased]: https://github.com/Imgrund/hybridlog/compare/v0.1.6...HEAD
+[Unreleased]: https://github.com/Imgrund/hybridlog/compare/v0.1.7...HEAD
+[0.1.7]: https://github.com/Imgrund/hybridlog/compare/v0.1.6...v0.1.7
 [0.1.6]: https://github.com/Imgrund/hybridlog/compare/v0.1.5...v0.1.6
 [0.1.5]: https://github.com/Imgrund/hybridlog/compare/v0.1.4...v0.1.5
 [0.1.4]: https://github.com/Imgrund/hybridlog/compare/v0.1.3...v0.1.4
