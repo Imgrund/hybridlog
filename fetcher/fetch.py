@@ -51,6 +51,7 @@ Usage:
 import argparse
 import json
 import os
+import re
 import sys
 import time
 import urllib.parse
@@ -61,7 +62,7 @@ from zoneinfo import ZoneInfo
 
 import psycopg
 from dotenv import load_dotenv
-from garminconnect import Garmin
+from garminconnect import Garmin, GarminConnectTooManyRequestsError
 from psycopg.types.json import Json
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -283,6 +284,31 @@ class NotConnected(Exception):
     """
 
 
+class RateLimited(Exception):
+    """Garmin is throttling this client, by status code or by Cloudflare.
+
+    Its own class because the right reaction inverts this file's usual
+    rule: any other endpoint failure is logged and the run moves on, this
+    one aborts the whole run, because every further call from a throttled
+    client extends the throttling. The endpoint's own error is already in
+    fetch_log by the time this is raised, so nothing is lost by leaving.
+    """
+
+
+# What throttling looks like from here. The typed exception is the clean
+# signal; the string markers catch the same condition arriving as a bare
+# HTTP error, and Cloudflare's challenge page, which answers long before
+# python-garminconnect gets to classify anything.
+RATE_LIMIT_MARKERS = ("too many requests", "just a moment", "cf-ray", "cloudflare")
+
+
+def rate_limited(exc: Exception) -> bool:
+    if isinstance(exc, GarminConnectTooManyRequestsError):
+        return True
+    text = f"{type(exc).__name__}: {exc}".lower()
+    return any(marker in text for marker in RATE_LIMIT_MARKERS) or re.search(r"\b429\b", text) is not None
+
+
 def record_login_failure(conn: psycopg.Connection, exc: Exception) -> None:
     """Persist a failed Garmin login into fetch_log (kind='login', ok=0).
 
@@ -351,6 +377,8 @@ class Fetcher:
         except Exception as exc:  # noqa: BLE001 - unofficial API, log and move on
             self.log(day, kind, False, f"{type(exc).__name__}: {exc}")
             print(f"  ! {day} {kind}: {type(exc).__name__}: {exc}", file=sys.stderr)
+            if rate_limited(exc):
+                raise RateLimited(f"{kind}: {exc}") from exc
             return None
 
     def keep_raw(self, day: str, kind: str, payload) -> None:
@@ -1529,28 +1557,45 @@ def main() -> int:
 
     fetcher = Fetcher(api, conn)
 
-    if args.laps_backfill:
-        fetcher.backfill_laps(args.laps_backfill)
+    # Everything below talks to Garmin, and a throttled client must stop
+    # talking: see RateLimited. The schema and the weather ran above this
+    # block on purpose, they involve no Garmin endpoint. Exit 6 is the
+    # contract with garmin:fetch-all, which stops its remaining athletes
+    # on it: the throttle belongs to the source address, so the next
+    # athlete's run from the same address would only feed it.
+    try:
+        if args.laps_backfill:
+            fetcher.backfill_laps(args.laps_backfill)
+            conn.close()
+            print("Done.")
+            return 0
+
+        d = start
+        while d <= end:
+            if args.intraday_only:
+                print(f"- {d.isoformat()} (intraday)")
+                fetcher.day_intraday(d.isoformat())
+            else:
+                fetcher.fetch_day(d)
+            d += timedelta(days=1)
+
+        if not args.intraday_only:
+            fetcher.fetch_activities(start, end)
+            fetcher.backfill_hr_zones()
+            fetcher.backfill_laps()
+            fetcher.fetch_snapshots(start, end)
+            fetcher.current_readiness()
+            fetcher.device_sync()
+    except RateLimited as exc:
+        print(f"Garmin is throttling this client ({exc}).", file=sys.stderr)
+        print(
+            "Stopping at once instead of retrying: every further call while "
+            "throttled extends the throttle. The next scheduled run resumes "
+            "where this one left off.",
+            file=sys.stderr,
+        )
         conn.close()
-        print("Done.")
-        return 0
-
-    d = start
-    while d <= end:
-        if args.intraday_only:
-            print(f"- {d.isoformat()} (intraday)")
-            fetcher.day_intraday(d.isoformat())
-        else:
-            fetcher.fetch_day(d)
-        d += timedelta(days=1)
-
-    if not args.intraday_only:
-        fetcher.fetch_activities(start, end)
-        fetcher.backfill_hr_zones()
-        fetcher.backfill_laps()
-        fetcher.fetch_snapshots(start, end)
-        fetcher.current_readiness()
-        fetcher.device_sync()
+        return 6
 
     conn.close()
     print("Done.")
