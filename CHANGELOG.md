@@ -7,6 +7,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.10] - 2026-08-18
+
+### Added
+
+- **describe-schema now says what is not there.** A date range alone
+  reads as complete: a sleep table spanning 120 days with 115 rows looks
+  whole, and a model that finds nothing for one of the holes concludes
+  the athlete did not sleep that night. For tables keyed by date the
+  answer now counts the missing days and names them when there are few
+  enough to name, and a new `fetch_errors` section lists day/endpoint
+  fetches that failed and were never fetched successfully afterwards, so
+  "no row" can be read as "no data" instead of as a finding.
+- **Tool answers built on seeded demo data say so.** The Quickstart's
+  happy path is seed, look at the dashboard, connect an AI; without a
+  marker the model reads the generated rows as the tester's own health
+  record. Every seeded row carries `fetched_at='demo'`, so every
+  successful tool answer from such a mirror now leads with a
+  `data_source` note, generated mirrors and mixed ones each in their own
+  words, while really fetched mirrors stay exactly as they were.
+
+### Fixed
+
+- **A provisional resting heart rate cannot fake an illness pattern any
+  more.** Garmin revises today's resting HR over the day, and the early
+  on-device reading can sit far above where it settles. On 60 finished
+  days the gap between the settled value and the day's own HR floor
+  never exceeded 7 bpm, so a reading for today sitting 10+ bpm above
+  that floor is an artefact: the illness pattern now rejects it and
+  falls back to yesterday's final reading, and the heart panel's 7/28-day
+  means skip it. Finished days and days without a floor are taken at
+  their word.
+
 ## [0.1.9] - 2026-08-18
 
 ### Fixed
