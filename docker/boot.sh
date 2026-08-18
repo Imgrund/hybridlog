@@ -13,9 +13,19 @@ cd /app
 # Docker creates a directory when a bind-mounted file is missing on the
 # host, and a directory named .env fails in a way nobody guesses from the
 # message. Say what happened instead.
+#
+# Two states end up here and they need different answers. Either there is
+# no .env beside compose.yaml, and copying the example settles it; or there
+# is one and the machine still cannot see it, because the project sits
+# outside the paths the Docker VM is allowed to share. The second is worth
+# naming: told only to copy, somebody in that state copies forever, since
+# every start turns the file back into a directory.
 if [ -d .env ]; then
-    echo "boot: /app/.env is a directory, which means there was no .env on the host." >&2
-    echo "boot: run 'rmdir .env && cp .env.example .env', then start again." >&2
+    echo "boot: /app/.env is a directory. Docker mounts one when the host has no file at that path." >&2
+    echo "boot: with no .env beside compose.yaml: run 'rmdir .env && cp .env.example .env', then start again." >&2
+    echo "boot: with one already there: this project sits outside what the Docker VM may share, so the copy" >&2
+    echo "boot: comes back as a directory every time. Move it under a shared path instead (Docker Desktop:" >&2
+    echo "boot: Settings, Resources, File sharing)." >&2
     exit 1
 fi
 

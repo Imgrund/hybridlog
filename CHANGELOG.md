@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **A first start from a path Docker cannot share now says what to do.**
+  The guard that catches `.env` arriving as a directory gave everyone the
+  same instruction: copy the example and start again. That is the answer
+  when the file was simply missing, and it is a loop when the file exists
+  but the project sits outside the directories the Docker VM is allowed to
+  share, because there every start turns the copy back into a directory.
+  The message now separates the two states and names the setting that
+  resolves the second.
+
 ## [0.1.11] - 2026-08-18
 
 ### Added
