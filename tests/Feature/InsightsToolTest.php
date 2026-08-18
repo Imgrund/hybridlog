@@ -57,10 +57,13 @@ class InsightsToolTest extends TestCase
             $date = date('Y-m-d', strtotime("-{$back} days"));
             $isToday = $back === 0;
 
+            $rhr = $isToday ? ($today['rhr'] ?? 48) : 48;
             $days[] = [
                 'date' => $date,
-                'resting_hr' => $isToday ? ($today['rhr'] ?? 48) : 48,
-                'min_hr' => 42,
+                'resting_hr' => $rhr,
+                // Coupled: a settled reading sits near the day's floor,
+                // and Insights reads today's value out where it does not.
+                'min_hr' => $rhr - 4,
                 'max_hr' => 160,
                 'vo2max_running' => 52.0,
             ];

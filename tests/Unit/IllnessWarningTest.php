@@ -121,6 +121,56 @@ class IllnessWarningTest extends TestCase
         $this->assertStringContainsString('below the weekly average', $result['message']);
     }
 
+    public function test_a_provisional_resting_hr_today_does_not_fire(): void
+    {
+        // Today's reading sits 17 bpm above the day's own HR floor: that
+        // is Garmin's provisional on-device value, not an onset. With no
+        // final reading to fall back on, the rule stays silent instead
+        // of reporting an illness pattern built on a number that will be
+        // revised away by evening.
+        $days = $this->days(50, null);
+        $days->push((object) ['date' => now()->toDateString(), 'resting_hr' => 62.0, 'min_hr' => 45.0]);
+
+        $result = $this->insights->illnessWarning(
+            $days, $this->sleep(14, 16.5), $this->hrv(38.0)
+        );
+
+        $this->assertNull($result);
+    }
+
+    public function test_yesterdays_final_reading_takes_over_from_a_provisional_today(): void
+    {
+        // Yesterday is finished and genuinely elevated; today is a
+        // provisional spike. The rule reads yesterday and fires on the
+        // real deviation, not on the artefact.
+        $days = $this->days(50, null);
+        $days->push((object) ['date' => now()->subDay()->toDateString(), 'resting_hr' => 56.0, 'min_hr' => 54.0]);
+        $days->push((object) ['date' => now()->toDateString(), 'resting_hr' => 62.0, 'min_hr' => 45.0]);
+
+        $result = $this->insights->illnessWarning(
+            $days, $this->sleep(14, 16.5), $this->hrv(55.0)
+        );
+
+        $this->assertNotNull($result);
+        $this->assertSame('warning', $result['status']);
+        $this->assertStringContainsString('Resting heart rate +6 bpm', $result['message']);
+    }
+
+    public function test_todays_resting_hr_near_its_floor_still_counts(): void
+    {
+        // Elevated against the baseline but close to the day's floor:
+        // that is a settled reading, and the guard must not eat it.
+        $days = $this->days(50, null);
+        $days->push((object) ['date' => now()->toDateString(), 'resting_hr' => 56.0, 'min_hr' => 53.0]);
+
+        $result = $this->insights->illnessWarning(
+            $days, $this->sleep(14, 16.5), $this->hrv(55.0)
+        );
+
+        $this->assertNotNull($result);
+        $this->assertStringContainsString('Resting heart rate +6 bpm', $result['message']);
+    }
+
     public function test_a_thin_baseline_stays_silent(): void
     {
         // Only 5 baseline days: no median worth the name, no verdict.
