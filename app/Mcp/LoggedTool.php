@@ -66,7 +66,10 @@ abstract class LoggedTool extends Tool
             $response->isError() ? $this->responseText($response) : null,
         );
 
-        return $response;
+        // Here rather than in any tool: whether the mirror holds seeded
+        // demo rows is a property of the data every answer stands on, and
+        // a stamp each tool had to remember would be forgotten by one.
+        return DemoNotice::stamp($response);
     }
 
     protected function record(Request $request, float $startedAt, bool $ok, ?string $error): void
