@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.11] - 2026-08-18
+
+### Added
+
+- **A public demo can count its visitors without a cookie.** Set
+  `UMAMI_SCRIPT_URL` and `UMAMI_WEBSITE_ID` to a self-hosted Umami
+  instance and every page carries its cookie-less tracking snippet;
+  leave either unset, which is the default, and nothing is rendered at
+  all. Built for the hosted demo, available to any installation, and
+  deliberately not tied to demo mode: whether a deployment counts its
+  visitors is the operator's call, not the mode's.
+
 ## [0.1.10] - 2026-08-18
 
 ### Added
