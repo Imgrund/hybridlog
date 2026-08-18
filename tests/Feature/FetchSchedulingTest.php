@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Tests\Feature;
 
+use App\Console\Commands\FetchGarminCommand;
 use App\Jobs\RunGarminFetch;
+use App\Models\User;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Facade;
@@ -71,6 +73,35 @@ class FetchSchedulingTest extends TestCase
         $this->athlete();
 
         $this->artisan('garmin:fetch')->assertFailed();
+    }
+
+    public function test_a_throttled_fetcher_reports_rate_limiting_by_exit_code(): void
+    {
+        // 6 is fetch.py's "Garmin is throttling this client". It survives
+        // the trip through the command distinguishably because fetch-all
+        // changes course on it, where every other failure is just failure.
+        Process::fake(['*' => Process::result(output: 'throttled', exitCode: 6)]);
+        $this->athlete();
+
+        $this->artisan('garmin:fetch')->assertExitCode(FetchGarminCommand::RATE_LIMITED);
+    }
+
+    public function test_fetch_all_stops_the_remaining_athletes_when_garmin_throttles(): void
+    {
+        // The throttle belongs to the source address, so the second
+        // athlete's run from the same address would only feed it: one
+        // fetcher launch, not two.
+        Process::fake(['*' => Process::result(output: 'throttled', exitCode: 6)]);
+        config(['garmin.fetch.command' => 'python fetch.py']);
+
+        $first = $this->athlete();
+        $this->connectGarmin($first);
+        $second = User::factory()->create();
+        $this->connectGarmin($second);
+
+        $this->artisan('garmin:fetch-all')->assertFailed();
+
+        Process::assertRanTimes(fn ($process) => str_contains($process->command, 'fetch.py'), 1);
     }
 
     public function test_the_job_runs_the_same_command(): void

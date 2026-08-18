@@ -28,6 +28,11 @@ use Throwable;
  * athlete's watch data has nothing to do with it, so the failure is
  * reported and the loop goes on. The exit code carries whether anything
  * failed, because the scheduler's log is where an operator looks.
+ *
+ * The one exception is Garmin throttling the client: that belongs to the
+ * source address, so it is every athlete's problem at once, and the loop
+ * stops rather than feed it. The next slot arrives hours later, which is
+ * the backoff.
  */
 class FetchEveryAthleteCommand extends Command
 {
@@ -66,6 +71,11 @@ class FetchEveryAthleteCommand extends Command
 
             if ($exitCode !== self::SUCCESS) {
                 $failed[] = $tenant;
+            }
+
+            if ($exitCode === FetchGarminCommand::RATE_LIMITED) {
+                $this->error('Garmin is throttling this address; skipping the remaining athletes until the next slot.');
+                break;
             }
         }
 

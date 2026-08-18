@@ -26,6 +26,14 @@ use Illuminate\Support\Facades\Process;
  */
 class FetchGarminCommand extends Command
 {
+    /**
+     * fetch.py's exit code for "Garmin is throttling this client", kept
+     * apart from plain failure because garmin:fetch-all changes course on
+     * it: the throttle belongs to the source address, not to the athlete,
+     * so the remaining athletes' runs would only feed it.
+     */
+    public const RATE_LIMITED = 6;
+
     protected $signature = 'garmin:fetch
         {--tenant= : Fetch for this user id instead of the installation owner}
         {--days= : Fetch the last N days instead of the fetcher\'s default of 7}
@@ -63,9 +71,10 @@ class FetchGarminCommand extends Command
 
         // The exit code is the whole point of the return value: the queue
         // job and the scheduler both decide from it whether the run failed,
-        // and fetch.py already exits non-zero on a broken login.
+        // and fetch.py already exits non-zero on a broken login. Throttling
+        // is the one code that survives the trip distinguishably.
         if (! $result->successful()) {
-            return self::FAILURE;
+            return $result->exitCode() === self::RATE_LIMITED ? self::RATE_LIMITED : self::FAILURE;
         }
 
         return self::SUCCESS;

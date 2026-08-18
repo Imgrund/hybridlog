@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **A throttled Garmin client stops fetching at once instead of feeding
+  the throttle.** Garmin rate-limits by source address, and its answer to
+  a limited client, HTTP 429 or a Cloudflare challenge, used to look like
+  any other per-endpoint hiccup: the fetcher logged it and moved on to
+  the next endpoint, the next day, and the next athlete, each call
+  extending the block it was caught in. The fetcher now recognises the
+  throttle (the library's own TooManyRequests error, a 429 status, or
+  Cloudflare's challenge page) and exits with its own code, and
+  `garmin:fetch-all` reads that code and skips the remaining athletes:
+  the throttle belongs to the address, not the athlete, so their runs
+  would only have fed it. The next scheduled slot, hours later, is the
+  backoff.
+
 ## [0.1.8] - 2026-08-18
 
 ### Fixed
