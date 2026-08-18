@@ -79,6 +79,7 @@ class FetchSchedulingTest extends TestCase
         config(['garmin.fetch.command' => 'python fetch.py']);
 
         $owner = $this->athlete();
+        $this->connectGarmin($owner);
 
         (new RunGarminFetch($owner->id))->handle();
 
@@ -90,6 +91,7 @@ class FetchSchedulingTest extends TestCase
         // So it lands in failed_jobs instead of being reported as done.
         Process::fake(['*' => Process::result(output: 'boom', exitCode: 2)]);
         $owner = $this->athlete();
+        $this->connectGarmin($owner);
 
         $this->expectException(\RuntimeException::class);
 

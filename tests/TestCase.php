@@ -5,10 +5,12 @@ namespace Tests;
 use App\Models\User;
 use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
 use Illuminate\Support\Facades\DB;
+use Tests\Concerns\ConnectsGarmin;
 use Tests\Concerns\CreatesMirrorSchema;
 
 abstract class TestCase extends BaseTestCase
 {
+    use ConnectsGarmin;
     use CreatesMirrorSchema;
 
     /** The installation owner the test acts as, once asked for. */

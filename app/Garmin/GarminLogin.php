@@ -325,9 +325,16 @@ class GarminLogin
                 return;
             }
 
-            app(FetchTrigger::class)->start($tenant, now()->subDays(
+            $refused = app(FetchTrigger::class)->start($tenant, now()->subDays(
                 (int) config('garmin.fetch.first_connect_days')
             )->toDateString());
+
+            // Cannot happen off a sign-in that just succeeded (the session
+            // row is what succeeded), so if it does, the log should say so
+            // rather than the backfill silently never starting.
+            if ($refused !== null) {
+                Log::warning('garmin login: the first fetch for user '.$tenant.' was not started: '.$refused);
+            }
         } catch (\Throwable $exception) {
             // The sign-in itself worked, and that is what the athlete is
             // watching. A mirror that could not be reached from here is

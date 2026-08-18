@@ -4,6 +4,7 @@ namespace App\Jobs;
 
 use App\Demo\DemoMode;
 use App\Garmin\FetchTrigger;
+use App\Garmin\GarminSession;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
@@ -89,6 +90,20 @@ class RunGarminFetch implements ShouldBeUnique, ShouldQueue
         // queued before the switch was thrown.
         if (DemoMode::enabled()) {
             app(FetchTrigger::class)->finish($this->tenant);
+
+            return;
+        }
+
+        // The queue outlives the state a job was dispatched in: the
+        // athlete can sign out of Garmin between dispatch and pickup, and
+        // a job queued before the trigger learned to refuse still has to
+        // land somewhere. Same refusal as the trigger's, by name: a
+        // missing session is the absence of a precondition, not news an
+        // operator needs a failed_jobs row and a stacktrace to hear.
+        if (! GarminSession::exists($this->tenant)) {
+            $trigger = app(FetchTrigger::class);
+            $trigger->recordFailure(GarminSession::notConnectedHint(), $this->tenant);
+            $trigger->finish($this->tenant);
 
             return;
         }

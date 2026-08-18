@@ -47,6 +47,7 @@ class FetchStatusTest extends TestCase
         // ninety-day first fetch, the endpoint says day 3 of 90.
         Queue::fake();
         $user = $this->athlete();
+        $this->connectGarmin($user);
         app(FetchTrigger::class)->start($user->id, now()->subDays(89)->toDateString());
 
         $this->seedMirror('fetch_log', collect(range(0, 2))->map(fn (int $i) => [
@@ -72,6 +73,7 @@ class FetchStatusTest extends TestCase
         // "day 90 of 90" and never appear to move.
         Queue::fake();
         $user = $this->athlete();
+        $this->connectGarmin($user);
 
         $this->seedMirror('fetch_log', [[
             'date' => now()->subDays(3)->toDateString(),
@@ -93,6 +95,7 @@ class FetchStatusTest extends TestCase
         // does not print this one, but the stall clock feeds on it.
         Queue::fake();
         $user = $this->athlete();
+        $this->connectGarmin($user);
         app(FetchTrigger::class)->start($user->id);
 
         $this->actingAs($user)

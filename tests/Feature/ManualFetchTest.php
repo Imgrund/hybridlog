@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Feature;
 
 use App\Garmin\FetchTrigger;
+use App\Garmin\Mirror;
 use App\Http\Controllers\FetchController;
 use App\Jobs\RunGarminFetch;
 use App\Mcp\Servers\GarminHealthServer;
@@ -12,6 +13,7 @@ use App\Mcp\Tools\RefreshDataTool;
 use App\Models\ConnectorSettings;
 use App\Models\McpToolCall;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Process;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\RateLimiter;
@@ -37,6 +39,7 @@ class ManualFetchTest extends TestCase
         // the fetch takes, while the page gets its "started" flash at once.
         Process::fake();
         Queue::fake();
+        $this->connectGarmin($this->athlete());
 
         $this->actingAs($this->athlete())
             ->post('/fetch')
@@ -47,6 +50,26 @@ class ManualFetchTest extends TestCase
         Process::assertNothingRan();
     }
 
+    public function test_the_button_refuses_without_a_garmin_session(): void
+    {
+        // The Quickstart's exact state: seeded data, an account, no Garmin
+        // sign-in. The click used to launch the fetcher anyway, whose
+        // certain failure became a failed_jobs row with a stacktrace, for
+        // a state the installation is expected to be in.
+        Process::fake();
+        Queue::fake();
+
+        $this->followingRedirects()
+            ->actingAs($this->athlete())
+            ->post('/fetch')
+            ->assertStatus(200)
+            ->assertSee('This installation is not connected to Garmin yet.')
+            ->assertSee('Sign in to Garmin');
+
+        Queue::assertNothingPushed();
+        $this->assertFalse(app(FetchTrigger::class)->isRunning($this->athlete()->id));
+    }
+
     public function test_a_second_click_within_the_window_does_not_start_a_second_fetch(): void
     {
         // The limiter sits in front of the trigger, so the second click never
@@ -54,6 +77,7 @@ class ManualFetchTest extends TestCase
         Process::fake();
         Queue::fake();
         $user = $this->athlete();
+        $this->connectGarmin($user);
 
         $this->actingAs($user)->post('/fetch')->assertSessionHas('fetch_started');
         $this->actingAs($user)->post('/fetch')->assertSessionHas('fetch_busy');
@@ -76,6 +100,7 @@ class ManualFetchTest extends TestCase
         // how fetches are started can never leave the model on an older path.
         Process::fake();
         Queue::fake();
+        $this->connectGarmin($this->athlete());
 
         GarminHealthServer::tool(RefreshDataTool::class, []);
 
@@ -83,6 +108,24 @@ class ManualFetchTest extends TestCase
         $this->assertTrue(
             McpToolCall::where('tool', 'refresh-data-tool')->where('ok', true)->exists()
         );
+    }
+
+    public function test_the_refresh_tool_refuses_on_a_never_connected_installation(): void
+    {
+        // A fresh installation has no fetch_log for dataStatus to read a
+        // NotConnected mark from, so the status alone said fetch_stale
+        // and the tool started a fetch that could only fail. The session
+        // table knows better, and the answer carries the sign-in URL.
+        Process::fake();
+        Queue::fake();
+
+        GarminHealthServer::tool(RefreshDataTool::class, [])
+            ->assertOk()
+            ->assertSee('"started":false')
+            ->assertSee('not connected to Garmin yet')
+            ->assertSee(route('connect.garmin'), false);
+
+        Queue::assertNothingPushed();
     }
 
     public function test_the_mcp_refresh_tool_obeys_its_permission_toggle(): void
@@ -133,6 +176,7 @@ class ManualFetchTest extends TestCase
         // as much the reason a number is still yesterday's. Before this,
         // only the request that started a fetch knew one was under way.
         Queue::fake();
+        $this->connectGarmin($this->athlete());
         app(FetchTrigger::class)->start($this->athlete()->id);
 
         $this->actingAs($this->athlete())
@@ -156,6 +200,7 @@ class ManualFetchTest extends TestCase
         // that was still running, until the four-minute cap ran out.
         Queue::fake();
         $user = $this->athlete();
+        $this->connectGarmin($user);
 
         $this->actingAs($user)->get('/fetch/status')->assertJson(['running' => false]);
 
@@ -171,6 +216,7 @@ class ManualFetchTest extends TestCase
         // The failure path clears the mark as well, so a page waiting on a
         // run that died is not left watching a spinner for its full TTL.
         Queue::fake();
+        $this->connectGarmin($this->athlete());
         $trigger = app(FetchTrigger::class);
         $trigger->start($this->athlete()->id);
 
@@ -178,6 +224,31 @@ class ManualFetchTest extends TestCase
 
         $this->assertFalse($trigger->isRunning($this->athlete()->id));
         $this->assertSame('garmin:fetch exited with code 1', $trigger->lastFailure($this->athlete()->id)['message']);
+    }
+
+    public function test_a_job_that_lost_its_session_refuses_quietly_instead_of_failing(): void
+    {
+        // The queue outlives the state a job was dispatched in: sign out
+        // of Garmin between dispatch and pickup and the run has no login
+        // left to attempt. It records the named reason for the page and
+        // ends, with no process launched, no exception and no
+        // failed_jobs row.
+        Process::fake();
+        Queue::fake();
+        $user = $this->athlete();
+        $this->connectGarmin($user);
+
+        $trigger = app(FetchTrigger::class);
+        $this->assertNull($trigger->start($user->id));
+
+        Mirror::unpin();
+        DB::connection('garmin')->table('garmin_private.garmin_session')->where('id', $user->id)->delete();
+
+        (new RunGarminFetch($user->id))->handle();
+
+        Process::assertNothingRan();
+        $this->assertFalse($trigger->isRunning($user->id));
+        $this->assertStringContainsString('not connected to Garmin yet', $trigger->lastFailure($user->id)['message']);
     }
 
     public function test_the_body_map_shows_the_metabolism_system(): void
@@ -196,6 +267,7 @@ class ManualFetchTest extends TestCase
         // minute" that then quietly stops being true.
         Queue::fake();
         $user = $this->athlete();
+        $this->connectGarmin($user);
         app(FetchTrigger::class)->start($user->id, now()->subDays(89)->toDateString());
 
         $this->actingAs($user)
@@ -209,6 +281,7 @@ class ManualFetchTest extends TestCase
         // The whole point of the wait: the model gets "completed" back and
         // can re-query in the same turn, instead of ending the conversation
         // with "sag Bescheid, wenn der Sync durch ist".
+        $this->connectGarmin($this->athlete());
         $this->seedMirror('fetch_log', [[
             'date' => now()->subDay()->toDateString(),
             'kind' => 'daily',
@@ -249,6 +322,7 @@ class ManualFetchTest extends TestCase
         // fetcher writes the activities last. Completing on the first
         // stamp told the model "the data is fresh" a minute or two before
         // the workout it was asked about had reached the mirror.
+        $this->connectGarmin($this->athlete());
         $this->seedMirror('fetch_log', [[
             'date' => now()->subDay()->toDateString(),
             'kind' => 'daily',
@@ -283,6 +357,7 @@ class ManualFetchTest extends TestCase
         // Over with the stamp unmoved means Garmin had nothing newer to
         // give, which is the answer to the question the tool was called
         // for, and the reason is almost always the watch, not the fetch.
+        $this->connectGarmin($this->athlete());
         $this->seedMirror('fetch_log', [[
             'date' => now()->subDay()->toDateString(),
             'kind' => 'daily',
@@ -307,6 +382,7 @@ class ManualFetchTest extends TestCase
         // seconds ago is long finished. The tool used to wait its budget
         // out here and answer still_running with nothing running, and the
         // model called again, forever inside the window.
+        $this->connectGarmin($this->athlete());
         $this->seedMirror('fetch_log', [[
             'date' => now()->toDateString(),
             'kind' => 'daily',
@@ -334,6 +410,7 @@ class ManualFetchTest extends TestCase
         // A run that died of a timeout or a lost database never moves the
         // stamp; without this the tool sat its budget out and reported
         // still_running about a run that was already in failed_jobs.
+        $this->connectGarmin($this->athlete());
         $this->seedMirror('fetch_log', [[
             'date' => now()->subDay()->toDateString(),
             'kind' => 'daily',
@@ -362,6 +439,7 @@ class ManualFetchTest extends TestCase
         // is the way the model resumes waiting, and it must not queue a
         // second fetch while doing so.
         Queue::fake();
+        $this->connectGarmin($this->athlete());
 
         GarminHealthServer::tool(RefreshDataTool::class, []);
         $response = GarminHealthServer::tool(RefreshDataTool::class, []);
@@ -374,6 +452,7 @@ class ManualFetchTest extends TestCase
     {
         // A run that discovers the Garmin login is gone must surface that,
         // not wait the budget out and report "still running".
+        $this->connectGarmin($this->athlete());
         $this->seedMirror('fetch_log', [[
             'date' => now()->subDay()->toDateString(),
             'kind' => 'daily',
