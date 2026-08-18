@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.12] - 2026-08-18
+
 ### Fixed
 
 - **A first start from a path Docker cannot share now says what to do.**
@@ -391,7 +393,11 @@ history that led to it.
 - English interface with a German translation, following the browser language
   unless the profile says otherwise.
 
-[Unreleased]: https://github.com/Imgrund/hybridlog/compare/v0.1.8...HEAD
+[Unreleased]: https://github.com/Imgrund/hybridlog/compare/v0.1.12...HEAD
+[0.1.12]: https://github.com/Imgrund/hybridlog/compare/v0.1.11...v0.1.12
+[0.1.11]: https://github.com/Imgrund/hybridlog/compare/v0.1.10...v0.1.11
+[0.1.10]: https://github.com/Imgrund/hybridlog/compare/v0.1.9...v0.1.10
+[0.1.9]: https://github.com/Imgrund/hybridlog/compare/v0.1.8...v0.1.9
 [0.1.8]: https://github.com/Imgrund/hybridlog/compare/v0.1.7...v0.1.8
 [0.1.7]: https://github.com/Imgrund/hybridlog/compare/v0.1.6...v0.1.7
 [0.1.6]: https://github.com/Imgrund/hybridlog/compare/v0.1.5...v0.1.6
