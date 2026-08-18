@@ -155,6 +155,15 @@ mirror, and sees none of anybody else's.
 shared account, everything that would reach out of it closed (the Garmin
 sign-in above all), and `php artisan demo:reset` putting it back nightly.
 
+A shop window is also the one place worth counting visitors in, and
+`UMAMI_SCRIPT_URL` plus `UMAMI_WEBSITE_ID` render the script tag of an
+[Umami](https://umami.is) instance you host yourself: page views without
+a cookie and without an identifier that follows anyone off the site.
+Both lines are needed, and with either empty, which is the default,
+nothing is rendered at all and no page requests a host but this one. It
+is not tied to `DEMO_MODE`, so a private installation stays free of
+outside scripts by simply leaving them alone.
+
 ## Connect an AI
 
 The server reads the same mirror the dashboard draws from, so a chat and

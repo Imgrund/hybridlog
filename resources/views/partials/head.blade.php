@@ -18,3 +18,12 @@
 <link rel="manifest" href="/manifest.webmanifest">
 <meta name="theme-color" content="#0b0c0f">
 @vite(['resources/css/app.css', 'resources/js/app.js'])
+{{-- The only script here that is not this app's own, and only where an
+     operator asked for it by filling both lines (see config/analytics.php).
+     Unset is the default and means this tag is never written: no request
+     leaves for anywhere but this installation. Both are required together,
+     because a tracker without a site to report to is a download and a
+     404. --}}
+@if (config('analytics.umami.script_url') && config('analytics.umami.website_id'))
+    <script defer src="{{ config('analytics.umami.script_url') }}" data-website-id="{{ config('analytics.umami.website_id') }}"></script>
+@endif
