@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **A fetch without a Garmin session is turned down by name instead of
+  failing the queue job.** The Quickstart's exact state: seeded data, an
+  account, no Garmin sign-in yet. The header button and the refresh-data
+  tool both launched fetch.py anyway, and its certain failure became a
+  RuntimeException with a stacktrace and a failed_jobs row, for a state
+  every installation is in until its first sign-in. Every door now
+  refuses with the sentence the header's status line already uses: the
+  page shows it as a flash with the sign-in button next to it, the MCP
+  answer carries the sign-in URL, and a job that lost its session
+  between dispatch and pickup records the reason for the waiting page
+  instead of dying. Real failures, a stored session that stopped working
+  or a timeout, land in failed_jobs unchanged.
+
 ## [0.1.7] - 2026-08-17
 
 ### Fixed
