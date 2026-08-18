@@ -12,7 +12,6 @@ use App\Jobs\RunGarminFetch;
 use App\Models\GarminLoginAttempt;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Process;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\RateLimiter;
@@ -31,19 +30,6 @@ use Tests\TestCase;
 class FetchTenancyTest extends TestCase
 {
     use RefreshDatabase;
-
-    /** Marks a tenant as having signed in to Garmin. */
-    private function connect(User $user): void
-    {
-        Mirror::ensure($user->id);
-        Mirror::unpin();
-
-        DB::connection('garmin')->table('garmin_private.garmin_session')->insert([
-            'id' => $user->id,
-            'tokens' => str_repeat('t', 64),
-            'updated_at' => now()->format('Y-m-d\TH:i:s'),
-        ]);
-    }
 
     public function test_the_command_fetches_for_the_athlete_it_is_given(): void
     {
@@ -85,8 +71,8 @@ class FetchTenancyTest extends TestCase
         $invited = User::factory()->create();
         $neverConnected = User::factory()->create();
 
-        $this->connect($owner);
-        $this->connect($invited);
+        $this->connectGarmin($owner);
+        $this->connectGarmin($invited);
 
         $this->artisan('garmin:fetch-all')->assertSuccessful();
 
@@ -104,8 +90,8 @@ class FetchTenancyTest extends TestCase
     {
         $owner = $this->athlete();
         $invited = User::factory()->create();
-        $this->connect($owner);
-        $this->connect($invited);
+        $this->connectGarmin($owner);
+        $this->connectGarmin($invited);
 
         config(['garmin.fetch.command' => 'python fetch.py']);
         Process::fake([
@@ -143,6 +129,7 @@ class FetchTenancyTest extends TestCase
         Queue::fake();
         $owner = $this->athlete();
         $invited = User::factory()->create();
+        $this->connectGarmin($owner);
 
         $trigger = app(FetchTrigger::class);
         $trigger->start($owner->id);
@@ -174,6 +161,8 @@ class FetchTenancyTest extends TestCase
         Queue::fake();
         $owner = $this->athlete();
         $invited = User::factory()->create();
+        $this->connectGarmin($owner);
+        $this->connectGarmin($invited);
 
         RateLimiter::clear(FetchController::limiterKey($owner->id));
         RateLimiter::clear(FetchController::limiterKey($invited->id));
@@ -210,6 +199,9 @@ class FetchTenancyTest extends TestCase
         config(['garmin.login.command' => 'sh -c \'printf "__GARMIN__ OK Athlete\\n"\'']);
 
         $invited = User::factory()->create();
+        // What the real login.py leaves behind before it reports OK, and
+        // what the trigger checks before it starts the backfill.
+        $this->connectGarmin($invited);
         $attempt = fn () => GarminLoginAttempt::create([
             'user_id' => $invited->id,
             'status' => GarminLoginAttempt::STARTING,

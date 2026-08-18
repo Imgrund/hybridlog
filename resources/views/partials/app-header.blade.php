@@ -251,6 +251,18 @@
                     <a x-show="connectUrl" x-cloak :href="connectUrl" class="btn btn-primary btn-sm" x-text="action">{{ __('Sign in to Garmin') }}</a>
                 </p>
             </div>
+        @elseif (session('fetch_refused'))
+            {{-- The trigger turned the click down and said why, today
+                 one reason: no Garmin session yet. The sentence arrives
+                 ready to show, and the one fix it names gets a button.
+                 Not on the public demo, where signing in is exactly what
+                 the page must not offer. --}}
+            <p class="mb-5 text-sm text-secondary flex flex-wrap items-center gap-x-2 gap-y-1">
+                <span>{{ session('fetch_refused') }}</span>
+                @unless ($demoMode)
+                    <a href="{{ route('connect.garmin') }}" class="btn btn-primary btn-sm">{{ __('Sign in to Garmin') }}</a>
+                @endunless
+            </p>
         @elseif (session('fetch_busy'))
             <p class="mb-5 text-sm text-secondary">
                 {{ __('A fetch is already running or was just started. Wait a moment, then reload.') }}

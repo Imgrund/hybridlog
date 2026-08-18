@@ -7,6 +7,7 @@ namespace App\Mcp\Tools;
 use App\Demo\DemoMode;
 use App\Garmin\FetchTrigger;
 use App\Garmin\GarminData;
+use App\Garmin\GarminSession;
 use App\Http\Controllers\FetchController;
 use App\Mcp\Concerns\ChecksConnectorPermissions;
 use App\Mcp\LoggedTool;
@@ -60,12 +61,16 @@ class RefreshDataTool extends LoggedTool
 
         // A fetch without a working Garmin session burns the rate-limit
         // window for nothing; say what is actually wrong instead, and
-        // hand over the one place where it can be put right.
+        // hand over the one place where it can be put right. The session
+        // table is asked as well as the status, because the status reads
+        // fetch_log: a never-connected installation with no fetch on
+        // record yet says fetch_stale there, and the tool used to start
+        // a fetch that could only fail.
         $status = $garmin->dataStatus();
-        if ($status->needsSignIn()) {
+        if ($status->needsSignIn() || ! GarminSession::exists(ActingUser::require()->id)) {
             return Response::json([
                 'started' => false,
-                'reason' => $status->hint,
+                'reason' => $status->needsSignIn() ? $status->hint : GarminSession::notConnectedHint(),
                 'sign_in_url' => route('connect.garmin'),
             ]);
         }

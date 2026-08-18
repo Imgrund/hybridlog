@@ -88,6 +88,20 @@ class FetchTrigger
 
         $tenant = $this->tenant($tenant);
 
+        // Without a stored Garmin session the fetch cannot succeed:
+        // fetch.py would launch, find no tokens and exit, and the queue
+        // job would turn that exit into a failed_jobs row with a
+        // stacktrace, for a state that is expected of every installation
+        // that has not signed in yet, the Quickstart above all. Refused
+        // here by name instead, before anything is marked as running.
+        // The session table rather than dataStatus(), because the status
+        // reads fetch_log: a freshly connected athlete still carries the
+        // NotConnected mark there until their first fetch, and that
+        // first fetch is the backfill this must not block.
+        if (! GarminSession::exists($tenant)) {
+            return GarminSession::notConnectedHint();
+        }
+
         // A new attempt clears the previous verdict. Otherwise the page
         // that just started a fetch would immediately be shown the
         // failure of the one before it and stop waiting.

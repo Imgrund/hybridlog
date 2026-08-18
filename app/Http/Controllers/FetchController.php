@@ -30,9 +30,17 @@ class FetchController extends Controller
             return redirect()->route('dashboard')->with('fetch_busy', true);
         }
 
-        return redirect()->route('dashboard')->with(
-            $fetch->start() === null ? 'fetch_started' : 'fetch_busy', true
-        );
+        // The trigger either starts the fetch or says in a sentence why
+        // it will not (no Garmin session, the demo). The sentence is the
+        // flash: calling that state "busy" would promise a fetch that is
+        // never going to happen.
+        $refused = $fetch->start();
+
+        if ($refused !== null) {
+            return redirect()->route('dashboard')->with('fetch_refused', $refused);
+        }
+
+        return redirect()->route('dashboard')->with('fetch_started', true);
     }
 
     /**
