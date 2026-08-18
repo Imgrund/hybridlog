@@ -79,8 +79,12 @@ class Insights
         $fmt = fn (?float $v, int $dec = 0) => $v === null ? '–' : NumberFormat::format($v, $dec);
 
         // ---- Heart: RHR vs. its own 28d baseline, VO2max 28d trend
-        $rhr7 = $this->windowAvg($days, 'resting_hr', 7);
-        $rhr28 = $this->windowAvg($days, 'resting_hr', 28);
+        // Without today's provisional reading, where one is recognisable:
+        // a single revised-away spike shifts the 7-day mean by up to
+        // 2 bpm, most of the way to the warning threshold below.
+        $rhrDays = $days->reject(fn ($r) => $this->provisionalRestingHr($r));
+        $rhr7 = $this->windowAvg($rhrDays, 'resting_hr', 7);
+        $rhr28 = $this->windowAvg($rhrDays, 'resting_hr', 28);
         $vo2Now = $this->lastValue($days, 'vo2max_running');
         $vo2Prev = $this->valueDaysAgo($days, 'vo2max_running', 28);
         $vo2Delta = ($vo2Now !== null && $vo2Prev !== null) ? round($vo2Now - $vo2Prev, 1) : null;
@@ -313,6 +317,16 @@ class Insights
     }
 
     /**
+     * Today's resting HR is provisional this far above the day's own HR
+     * floor. Garmin revises the value over the day, and the early reading
+     * can sit far above where it settles; on 60 finished days the gap to
+     * min_hr never exceeded 7 bpm, so 10 keeps a margin while still
+     * catching the double-digit provisional spikes that would read as
+     * illness.
+     */
+    private const PROVISIONAL_RHR_GAP = 10;
+
+    /**
      * Early illness pattern across three markers. Baseline is the median
      * over 30 days excluding the last two, so the potential onset days
      * cannot drag the baseline toward the deviation. Fires when at least
@@ -328,9 +342,14 @@ class Insights
     {
         // Current values must come from the excluded window (today or
         // yesterday): an older reading would compare the baseline era
-        // against itself.
+        // against itself. Today's value is only trusted when it sits near
+        // the day's own HR floor; a provisional reading is rejected here
+        // so yesterday's final one takes over rather than faking an onset.
         $currentSince = now()->subDays(1)->toDateString();
-        $rhrRow = $days->filter(fn ($r) => $r->resting_hr !== null && $r->date >= $currentSince)->sortBy('date')->last();
+        $rhrRow = $days
+            ->filter(fn ($r) => $r->resting_hr !== null && $r->date >= $currentSince)
+            ->reject(fn ($r) => $this->provisionalRestingHr($r))
+            ->sortBy('date')->last();
         $respRow = $sleep->filter(fn ($r) => $r->respiration_avg !== null && $r->date >= $currentSince)->sortBy('date')->last();
 
         $rhrBase = $this->baselineMedian($days, 'resting_hr');
@@ -385,6 +404,24 @@ class Insights
             'respDelta' => $respDelta,
             'hrvNote' => $hrvNote,
         ];
+    }
+
+    /**
+     * Whether a day's resting HR is an on-device provisional reading.
+     *
+     * Only today can be provisional: a finished day's value is what
+     * Garmin settled on, and there a large gap to the floor would itself
+     * be information. The floor is the day's min_hr, which by mid-morning
+     * is the night's low; without it there is nothing to check against
+     * and the value is taken at its word.
+     */
+    private function provisionalRestingHr(object $day): bool
+    {
+        if ($day->date !== now()->toDateString() || ($day->min_hr ?? null) === null) {
+            return false;
+        }
+
+        return (float) $day->resting_hr - (float) $day->min_hr >= self::PROVISIONAL_RHR_GAP;
     }
 
     /**

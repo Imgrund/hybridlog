@@ -22,7 +22,11 @@ trait FakesGarminMirror
         return (object) [
             'date' => now()->subDays($daysAgo)->toDateString(),
             'resting_hr' => $rhr,
-            'min_hr' => 42,
+            // Coupled to the resting HR the way a settled reading is: on a
+            // sick day the nightly floor runs high with it. A fixed floor
+            // under an elevated reading is the provisional-artefact shape,
+            // and Insights reads today's value out of exactly that.
+            'min_hr' => $rhr - 4,
             'max_hr' => 150,
             'vo2max_running' => null,
             'calories_total' => 2600,
