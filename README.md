@@ -11,7 +11,9 @@ does not (training load, muscle freshness, readiness in context), and
 hands all of it to a language model over stdio or HTTP, so the things
 Garmin cannot measure can be dictated into the chat instead of typed into
 a form. A dashboard comes with it: the body map, the training load, and
-the login the connector authenticates against.
+the login the connector authenticates against. There is no hosted
+instance, and that is the point: it is a health record, and the model
+reads it through a role that can only read.
 
 Running, lifting or both on the same day: the models do not care which.
 Sessions that alternate running with station work get a lap-by-lap
@@ -69,10 +71,9 @@ browser language unless the profile says otherwise.</sub>
   it, so a field nobody has built a column for is still there to be asked
   about, and a day Garmin Connect no longer serves is still in the mirror.
 
-There is no hosted instance, and that is the point: it is a health
-record. The Garmin session sits in a schema of your own database that no
-reader role can reach, so the SQL a model writes cannot ask for it, and
-no operator but you holds it. Past Garmin itself, two optional things
+What *no hosted instance* means in practice: the Garmin session sits in
+a schema of your own database that no reader role can reach, so the SQL
+a model writes cannot ask for it, and no operator but you holds it. Past Garmin itself, two optional things
 reach out at all: the weather, which takes a pair of coordinates you fill
 in yourself, and notifications, where the push service is woken by an
 empty POST and never carries what it was about.
