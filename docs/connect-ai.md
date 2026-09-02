@@ -113,7 +113,7 @@ Student plans the account owner is the administrator, so on a personal
 account that is you.
 
 Custom connectors do not carry prompt templates or resources yet, so the
-`weekly-report` prompt is missing there. All twelve tools arrive, sorted
+`weekly-report` prompt is missing there. All thirteen tools arrive, sorted
 into interactive and read-only, each with a switch of Mistral's own. That
 switch and the one at `/connect` are separate: either can withhold a
 tool, and the server's is the one that still applies when the client's
@@ -182,7 +182,7 @@ code in memory, so restart the client after changing a tool.
 
 ## What it can do
 
-Twelve tools and one prompt, each gated by a switch at `/connect`: the
+Thirteen tools and one prompt, each gated by a switch at `/connect`: the
 table is on the [README](../README.md#the-tools).
 
 Two details that belong here rather than there. The summary and the

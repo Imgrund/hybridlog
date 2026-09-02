@@ -55,7 +55,7 @@ browser language unless the profile says otherwise.</sub>
 
 ## What it is
 
-- **MCP server**: twelve tools and one prompt over `laravel/mcp`, in two
+- **MCP server**: thirteen tools and one prompt over `laravel/mcp`, in two
   transports. Local (stdio) for Claude Code and Claude Desktop, hosted
   (streamable HTTP with OAuth 2.1, PKCE and dynamic client registration)
   for claude.ai, ChatGPT, Mistral's Le Chat (renamed Vibe), LM Studio and
@@ -80,7 +80,7 @@ empty POST and never carries what it was about.
 
 ## The tools
 
-Twelve tools and one prompt. The right-hand column is the switch at
+Thirteen tools and one prompt. The right-hand column is the switch at
 `/connect` that gates each one; everything is on by default.
 
 | Tool | What it answers | Needs |
@@ -91,6 +91,7 @@ Twelve tools and one prompt. The right-hand column is the switch at
 | `get-training-load-tool` | CTL/ATL/TSB, the acute:chronic ratio, the weekly stimulus split | Read health data |
 | `get-strength-progress-tool` | week by week per exercise category: reps, tonnage where it was recorded, top weights, what has not moved | Read health data |
 | `get-race-splits-tool` | one session lap by lap: running vs. station work, pace per lap, how far the pace drifted | Read health data |
+| `get-activity-detail-tool` | one session in depth: zone minutes and shares against the athlete's zone floors, laps, sets, the heart-rate curve, and how it compares with earlier sessions of its kind | Read health data |
 | `describe-schema-tool` | the mirror's tables and columns, so the model can write its own query | Read health data, Read body metrics |
 | `query-health-data-tool` | everything else, as one read-only SELECT with a 500-row cap | Read health data, Read body metrics |
 | `refresh-data-tool` | syncs today and yesterday from Garmin (the header button's job, narrowed to two days) and waits for it | Start a fetch |
@@ -189,7 +190,7 @@ against the dashboard's own login, so no client ever sees a password and
 can skip the deployment entirely and talk to the repository over stdio.
 [docs/connect-ai.md](docs/connect-ai.md) has the steps per client.
 
-Whichever way it connects, it gets [the same twelve tools](#the-tools) and
+Whichever way it connects, it gets [the same thirteen tools](#the-tools) and
 the same switches.
 
 Things worth asking, once it is connected:
