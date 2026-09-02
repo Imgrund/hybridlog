@@ -61,7 +61,7 @@ class QueryHealthDataTool extends LoggedTool
 
             return Response::json($query->run($sql));
         } catch (InvalidArgumentException|PDOException $e) {
-            return Response::error('Query failed: '.$e->getMessage().self::dialectHint($e).$this->columnHint($e));
+            return Response::error('Query failed: '.$e->getMessage().self::dialectHint($e).$this->columnHint($e, $validated['sql']));
         }
     }
 
@@ -101,8 +101,15 @@ class QueryHealthDataTool extends LoggedTool
      * sleep_factor_feedback to sleep_score_factor is large, the overlap
      * obvious. Tables the athlete has switched off stay out of the list,
      * exactly as describe-schema hides them.
+     *
+     * Three ranked guesses still leave the retry a guess when the wanted
+     * column shares no token with the invented name. So the full column
+     * list of every table the statement names follows them, and the next
+     * attempt is a lookup either way. The tables are read off the
+     * statement text rather than through QueryTables, whose EXPLAIN
+     * fails on the very error being explained.
      */
-    private function columnHint(\Throwable $e): string
+    private function columnHint(\Throwable $e, string $sql): string
     {
         if (! str_contains($e->getMessage(), '42703')
             || ! preg_match('/column (?:"?\w+"?\.)?"?(\w+)"? does not exist/', $e->getMessage(), $matches)) {
@@ -116,6 +123,7 @@ class QueryHealthDataTool extends LoggedTool
                 .' join pg_namespace n on n.oid = c.relnamespace'
                 .' join pg_attribute a on a.attrelid = c.oid and a.attnum > 0 and not a.attisdropped'
                 ." where n.nspname = current_schema() and c.relkind = 'r'"
+                .' order by c.relname, a.attnum'
             );
         } catch (\Throwable) {
             // The hint must never turn one failure into two.
@@ -126,9 +134,15 @@ class QueryHealthDataTool extends LoggedTool
         $hidden = $this->settings()->share_body_metrics ? [] : ConnectorSettings::BODY_METRIC_TABLES;
 
         $scored = [];
+        $named = [];
         foreach ($columns as $column) {
-            if (in_array((string) $column->table_name, $hidden, true)) {
+            $table = (string) $column->table_name;
+            if (in_array($table, $hidden, true)) {
                 continue;
+            }
+
+            if (preg_match('/\b'.preg_quote($table, '/').'\b/i', $sql)) {
+                $named[$table][] = (string) $column->column_name;
             }
 
             $shared = count(array_intersect(
@@ -149,8 +163,14 @@ class QueryHealthDataTool extends LoggedTool
 
         $closest = array_column(array_slice($scored, 0, 3), 'name');
 
+        $listing = implode('', array_map(
+            fn (string $table, array $names): string => sprintf(' Columns of %s: %s.', $table, implode(', ', $names)),
+            array_keys($named),
+            $named,
+        ));
+
         return $closest === []
-            ? sprintf(' Note: no column named "%s" exists in this mirror; describe-schema lists every table and column.', $missing)
-            : sprintf(' Note: no column named "%s" exists; the closest that do: %s. describe-schema lists them all.', $missing, implode(', ', $closest));
+            ? sprintf(' Note: no column named "%s" exists in this mirror.%s describe-schema lists every table and column.', $missing, $listing)
+            : sprintf(' Note: no column named "%s" exists; the closest that do: %s.%s describe-schema lists them all.', $missing, implode(', ', $closest), $listing);
     }
 }

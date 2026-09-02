@@ -110,6 +110,40 @@ class ManualFetchTest extends TestCase
         );
     }
 
+    public function test_the_refresh_tool_asks_for_today_and_yesterday_only(): void
+    {
+        // The tool exists for the workout just finished; the scheduled runs
+        // walk the week. A full week per call meant call after call of
+        // still_running before the model got an answer.
+        Process::fake();
+        Queue::fake();
+        $this->connectGarmin($athlete = $this->athlete());
+
+        GarminHealthServer::tool(RefreshDataTool::class, []);
+
+        Queue::assertPushed(RunGarminFetch::class, fn (RunGarminFetch $job): bool => $job->days === 2);
+        $this->assertSame(
+            now()->subDay()->toDateString(),
+            app(FetchTrigger::class)->currentRun($athlete->id)['from'],
+        );
+    }
+
+    public function test_the_button_keeps_walking_the_week(): void
+    {
+        // Narrowing the tool must not narrow the button: the dashboard's
+        // refresh is what an athlete presses after a few days away.
+        Queue::fake();
+        $this->connectGarmin($athlete = $this->athlete());
+
+        app(FetchTrigger::class)->start($athlete->id);
+
+        Queue::assertPushed(RunGarminFetch::class, fn (RunGarminFetch $job): bool => $job->days === null);
+        $this->assertSame(
+            now()->subDays(6)->toDateString(),
+            app(FetchTrigger::class)->currentRun($athlete->id)['from'],
+        );
+    }
+
     public function test_the_refresh_tool_refuses_on_a_never_connected_installation(): void
     {
         // A fresh installation has no fetch_log for dataStatus to read a

@@ -5,26 +5,34 @@ declare(strict_types=1);
 namespace App\Console\Commands;
 
 use App\Models\McpToolCall;
+use App\Models\User;
 use Illuminate\Console\Command;
 use Illuminate\Support\Collection;
 
 class McpUsageCommand extends Command
 {
-    protected $signature = 'mcp:usage {--days=30 : How far back to look} {--errors : Show the failed calls in full} {--calls : Show every call with its arguments}';
+    protected $signature = 'mcp:usage {--days=30 : How far back to look} {--athlete= : Only the calls of this athlete (user id)} {--errors : Show the failed calls in full} {--calls : Show every call with its arguments}';
 
     protected $description = 'Show how the AI connectors actually use the MCP server';
 
     public function handle(): int
     {
         $days = max(1, (int) $this->option('days'));
+        $athlete = $this->option('athlete');
+        $athlete = $athlete === null || $athlete === '' ? null : (int) $athlete;
 
         /** @var Collection<int, McpToolCall> $calls */
         $calls = McpToolCall::where('created_at', '>=', now()->subDays($days))
+            ->when($athlete !== null, fn ($query) => $query->where('user_id', $athlete))
             ->orderBy('created_at')
             ->get();
 
         if ($calls->isEmpty()) {
-            $this->components->warn("No MCP tool calls in the last {$days} days.");
+            $this->components->warn(sprintf(
+                'No MCP tool calls%s in the last %d days.',
+                $athlete === null ? '' : " by athlete #{$athlete}",
+                $days,
+            ));
 
             return self::SUCCESS;
         }
@@ -70,6 +78,35 @@ class McpUsageCommand extends Command
                 );
             });
 
+        $this->newLine();
+        // One installation can carry more than one athlete, and the per-tool
+        // view adds them up: an error rate only becomes actionable once it is
+        // known whose chats produce it.
+        $this->components->info('Per athlete');
+
+        $names = User::whereIn('id', $calls->pluck('user_id')->filter()->unique())->pluck('name', 'id');
+
+        $calls->groupBy(fn (McpToolCall $call): string => (string) ($call->user_id ?? ''))
+            ->sortByDesc(fn (Collection $group): int => $group->count())
+            ->each(function (Collection $group, string $id) use ($names): void {
+                $errors = $group->where('ok', false)->count();
+                $favourite = $group->countBy('tool')->sortDesc()->keys()->first();
+                $last = $group->sortByDesc('created_at')->first()->created_at->timezone('Europe/Berlin')->format('d.m. H:i');
+
+                $this->components->twoColumnDetail(
+                    $id === '' ? 'no athlete recorded' : sprintf('#%s %s', $id, $names[(int) $id] ?? 'deleted user'),
+                    sprintf(
+                        '%d call%s · %s',
+                        $group->count(),
+                        $group->count() === 1 ? '' : 's',
+                        $errors === 0 ? '<fg=green>no errors</>' : "<fg=red>{$errors} failed</>",
+                    ),
+                );
+                // On its own line: the two-column row wraps past eighty
+                // columns, and a tool name plus a timestamp push it there.
+                $this->line("    <fg=gray>mostly {$favourite} · last {$last}</>");
+            });
+
         if ($this->option('calls')) {
             $this->newLine();
             // The protocol never carries the question, so the subject has to be
@@ -78,10 +115,11 @@ class McpUsageCommand extends Command
 
             $calls->each(function (McpToolCall $call): void {
                 $this->line(sprintf(
-                    '<fg=gray>%s</> %s <fg=gray>%s</>',
+                    '<fg=gray>%s</> %s <fg=gray>%s #%s</>',
                     $call->created_at->timezone('Europe/Berlin')->format('d.m. H:i'),
                     $call->ok ? "<fg=yellow>{$call->tool}</>" : "<fg=red>{$call->tool}</>",
                     $call->client ?? $call->transport,
+                    $call->user_id ?? '?',
                 ));
                 $this->line('  '.$this->summarise($call));
             });

@@ -93,7 +93,7 @@ Twelve tools and one prompt. The right-hand column is the switch at
 | `get-race-splits-tool` | one session lap by lap: running vs. station work, pace per lap, how far the pace drifted | Read health data |
 | `describe-schema-tool` | the mirror's tables and columns, so the model can write its own query | Read health data, Read body metrics |
 | `query-health-data-tool` | everything else, as one read-only SELECT with a 500-row cap | Read health data, Read body metrics |
-| `refresh-data-tool` | starts the same fetch as the header button and waits for it | Start a fetch |
+| `refresh-data-tool` | syncs today and yesterday from Garmin (the header button's job, narrowed to two days) and waits for it | Start a fetch |
 | `log-symptom-tool` | a strain mentioned in passing, as a marker on the body map | Log how you feel |
 | `delete-symptom-tool` | takes one off again once it has healed | Log how you feel |
 | `give-feedback-tool` | a correction that becomes a standing guideline for the connector | Process feedback |

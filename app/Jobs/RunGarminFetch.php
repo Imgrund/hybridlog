@@ -49,8 +49,10 @@ class RunGarminFetch implements ShouldBeUnique, ShouldQueue
      * @param  int  $tenant  the user whose mirror this run fills
      * @param  string|null  $backfill  a YYYY-MM-DD start date for the first
      *                                 fetch of a newly connected athlete
+     * @param  int|null  $days  how many days back the run walks; null leaves
+     *                          the fetcher on its own default
      */
-    public function __construct(public int $tenant, public ?string $backfill = null)
+    public function __construct(public int $tenant, public ?string $backfill = null, public ?int $days = null)
     {
         // Longer than the process it starts, so a fetcher that hangs is
         // killed by its own timeout with its output in the log, rather
@@ -116,6 +118,7 @@ class RunGarminFetch implements ShouldBeUnique, ShouldQueue
             $exitCode = Artisan::call('garmin:fetch', array_filter([
                 '--tenant' => (string) $this->tenant,
                 '--backfill' => $this->backfill,
+                '--days' => $this->days === null ? null : (string) $this->days,
             ]));
 
             if ($exitCode !== 0) {

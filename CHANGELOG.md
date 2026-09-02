@@ -7,6 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **A query that names a column the mirror does not have now gets the
+  full column list of the tables it used.** The three closest names stay,
+  but they are guesses ranked by name, and the wanted column often shares
+  no token with the invented one. The tables the statement itself named
+  are listed in full after them, so the next attempt is a lookup rather
+  than a second guess.
+- **`mcp:usage` tells the athletes of one installation apart.** A new
+  "Per athlete" section shows each athlete's calls, failures, most used
+  tool and last call, `--athlete=<user id>` narrows the whole report to
+  one of them, and the `--calls` listing names the athlete on every line.
+
+### Changed
+
+- **The chat's refresh now syncs today and yesterday instead of the whole
+  week.** The refresh-data tool started the same seven-day walk as the
+  dashboard's button, and at half a minute of wait per call the model
+  polled through a run it only needed the last day of. The scheduled runs
+  keep walking the week; the tool's run exists for the workout just
+  finished, and yesterday only because a late session and a night's sleep
+  straddle midnight.
+
 ### Fixed
 
 - **Multisport sessions now carry their heart-rate zones.** Garmin keeps

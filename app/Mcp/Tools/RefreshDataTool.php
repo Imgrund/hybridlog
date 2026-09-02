@@ -21,8 +21,9 @@ use Laravel\Mcp\Server\Tools\Annotations\IsDestructive;
 use Laravel\Mcp\Server\Tools\Annotations\IsIdempotent;
 
 #[Description(
-    'Trigger a fresh Garmin Connect sync and wait for it to finish (the same fetch the '.
-    'dashboard\'s refresh button starts). Use when the user asks about "now" and last_fetch is '.
+    'Trigger a fresh Garmin Connect sync of today and yesterday and wait for it to finish (the '.
+    'same job as the dashboard\'s refresh button, narrowed to two days: the scheduled runs cover '.
+    'the week, this one exists for "now"). Use when the user asks about today and last_fetch is '.
     'stale (e.g. after a workout). The call blocks until the run is over, up to about half a '.
     'minute per call; a still_running answer means the run needs longer, so call this tool again '.
     'to keep waiting, that never starts a second sync. completed means the whole run is done, '.
@@ -38,6 +39,19 @@ use Laravel\Mcp\Server\Tools\Annotations\IsIdempotent;
 class RefreshDataTool extends LoggedTool
 {
     use ChecksConnectorPermissions;
+
+    /**
+     * Today and yesterday, no further.
+     *
+     * A refresh from the chat used to walk the fetcher's full week, and
+     * at half a minute of wait per call that was call after call of
+     * still_running before an answer: the telemetry showed the model
+     * polling through a run it only needed the last day of. The
+     * scheduled runs walk the week several times a day; this one exists
+     * for the workout just finished, and yesterday only because a late
+     * session and a night's sleep straddle midnight.
+     */
+    private const DAYS = 2;
 
     public function execute(Request $request, GarminData $garmin, FetchTrigger $fetch): Response
     {
@@ -89,7 +103,7 @@ class RefreshDataTool extends LoggedTool
             FetchController::limiterKey(ActingUser::require()->id), 1, fn () => true, 120
         );
 
-        if ($started && ($reason = $fetch->start()) !== null) {
+        if ($started && ($reason = $fetch->start(days: self::DAYS)) !== null) {
             return Response::error(__('The fetch job could not be started: :reason', ['reason' => $reason]));
         }
 

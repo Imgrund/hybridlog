@@ -92,6 +92,26 @@ class QueryDialectHintTest extends TestCase
             ->assertSee('describe-schema');
     }
 
+    public function test_an_invented_column_lists_every_column_of_the_tables_the_query_named(): void
+    {
+        $this->useTestMirror();
+        $this->mirror()->statement('create table readiness (date text primary key, sleep_score_factor integer, hrv_factor integer)');
+        $this->mirror()->statement('create table sleep (date text primary key, score integer)');
+        $this->mirror()->statement('create table days (date text primary key, steps integer)');
+
+        $response = GarminHealthServer::tool(QueryHealthDataTool::class, [
+            'sql' => 'select r.date, r.sleep_factor_feedback from readiness r join sleep s using (date)',
+        ]);
+
+        // Three ranked guesses leave the retry a guess when the wanted
+        // column shares no token with the invented name; the tables the
+        // statement itself named are listed in full, and only those.
+        $response->assertHasErrors()
+            ->assertSee('Columns of readiness: date, sleep_score_factor, hrv_factor.')
+            ->assertSee('Columns of sleep: date, score.')
+            ->assertDontSee('Columns of days');
+    }
+
     public function test_an_invented_column_without_lookalikes_still_points_at_describe_schema(): void
     {
         $this->useTestMirror();

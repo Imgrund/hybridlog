@@ -38,6 +38,11 @@ class FetchTrigger
     private const FAILURE_TTL_HOURS = 24;
 
     /**
+     * fetch.py's own --days default: the width of a run nobody narrowed.
+     */
+    public const DEFAULT_DAYS = 7;
+
+    /**
      * Set from the moment a fetch is asked for until the run reports back,
      * one way or the other.
      *
@@ -73,9 +78,12 @@ class FetchTrigger
      * $backfill is the one case where a fetch reaches further than the
      * usual week: an athlete's first run after connecting Garmin, which
      * fills the ninety days the dashboard opens on. See
-     * App\Garmin\GarminLogin.
+     * App\Garmin\GarminLogin. $days is the opposite case, a run that
+     * reaches less far: the chat's refresh asks for today and yesterday,
+     * because it exists for "now" and the scheduled runs already walk
+     * the week. Null leaves the fetcher on its own default.
      */
-    public function start(?int $tenant = null, ?string $backfill = null): ?string
+    public function start(?int $tenant = null, ?string $backfill = null, ?int $days = null): ?string
     {
         // The one gate both doors pass through, which is why the demo is
         // turned away here rather than at each of them: a public demo runs
@@ -114,17 +122,16 @@ class FetchTrigger
         // cannot leave the page claiming a fetch forever.
         Cache::put($this->key(self::RUNNING_KEY, $tenant), [
             'started' => now()->toIso8601String(),
-            // The days this run will walk, oldest first. Seven is not
-            // repeated from anywhere: it is fetch.py's own default
-            // (--days 7, so start = today - 6), mirrored here because
-            // the fetcher never says what it set out to do, only what
-            // it has done.
-            'from' => $backfill ?? now()->subDays(6)->toDateString(),
+            // The days this run will walk, oldest first. The default is
+            // not repeated from anywhere: it is fetch.py's own (--days 7,
+            // so start = today - 6), mirrored here because the fetcher
+            // never says what it set out to do, only what it has done.
+            'from' => $backfill ?? now()->subDays(($days ?? self::DEFAULT_DAYS) - 1)->toDateString(),
             'to' => now()->toDateString(),
             'backfill' => $backfill !== null,
         ], now()->addSeconds(self::runningTtl()));
 
-        RunGarminFetch::dispatch($tenant, $backfill);
+        RunGarminFetch::dispatch($tenant, $backfill, $days);
 
         return null;
     }
