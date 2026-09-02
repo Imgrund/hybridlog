@@ -405,7 +405,7 @@ CREATE INDEX IF NOT EXISTS idx_activities_date ON {mirror}.activities(date);
 
 COMMENT ON COLUMN {mirror}.activities.id IS 'Garmin activityId';
 COMMENT ON COLUMN {mirror}.activities.total_volume_g IS 'tonnage in grams (Garmin unit)';
-COMMENT ON COLUMN {mirror}.activities.hr_zones_json IS 'seconds per HR zone';
+COMMENT ON COLUMN {mirror}.activities.hr_zones_json IS 'seconds per HR zone as JSON ({"1": 62.0, ..., "5": 118.0}); {} once Garmin answered that the activity has none, null while the fetcher has not asked yet';
 
 CREATE TABLE IF NOT EXISTS {mirror}.strength_sets (
     activity_id bigint,

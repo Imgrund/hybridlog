@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **Multisport sessions now carry their heart-rate zones.** Garmin keeps
+  the zones of a multisport recording on its legs and answers the parent
+  activity, the one the mirror lists, with an empty list. The fetcher
+  read that as "nothing yet" and asked again on every run, so those
+  sessions never got zones and cost a request each, three times a day,
+  for as long as the mirror existed. It now follows the parent to its
+  legs and stores the summed seconds per zone; an activity Garmin has no
+  zones for anywhere is recorded as `{}` and asked once.
+
 ## [0.1.12] - 2026-08-18
 
 ### Fixed
