@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.13] - 2026-09-03
+
 ### Added
 
 - **One session in depth, from one tool.** `get-activity-detail-tool`
@@ -42,6 +44,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   keep walking the week; the tool's run exists for the workout just
   finished, and yesterday only because a late session and a night's sleep
   straddle midnight.
+- **Dependencies.** laravel/framework 13.29, laravel/mcp 0.9.4,
+  mockery 1.6.15, vite 8.2.2, alpinejs 3.17.0, concurrently 10.0.5 and,
+  in the fetcher, garminconnect 0.3.11 (with its hardened token store)
+  and python-dotenv 1.2.3.
 
 ### Fixed
 
@@ -440,7 +446,8 @@ history that led to it.
 - English interface with a German translation, following the browser language
   unless the profile says otherwise.
 
-[Unreleased]: https://github.com/Imgrund/hybridlog/compare/v0.1.12...HEAD
+[Unreleased]: https://github.com/Imgrund/hybridlog/compare/v0.1.13...HEAD
+[0.1.13]: https://github.com/Imgrund/hybridlog/compare/v0.1.12...v0.1.13
 [0.1.12]: https://github.com/Imgrund/hybridlog/compare/v0.1.11...v0.1.12
 [0.1.11]: https://github.com/Imgrund/hybridlog/compare/v0.1.10...v0.1.11
 [0.1.10]: https://github.com/Imgrund/hybridlog/compare/v0.1.9...v0.1.10
