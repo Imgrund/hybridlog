@@ -200,6 +200,24 @@ def save_raw(day: str, kind: str, payload) -> None:
     (d / f"{kind}.json").write_text(json.dumps(payload, ensure_ascii=False))
 
 
+def zone_seconds(payload) -> dict[str, float]:
+    """Seconds per HR zone out of Garmin's hrTimeInZones answer.
+
+    The column promises "seconds per HR zone" and gets exactly that:
+    {"1": 62.0, ..., "5": 118.0}. Garmin sends zone boundaries too, but
+    those follow the athlete's current zone setup, so storing them next
+    to historic seconds would fake a precision the data does not have.
+    Only numeric seconds make it in.
+    """
+    return {
+        str(z["zoneNumber"]): z["secsInZone"]
+        for z in (payload or [])
+        if isinstance(z, dict)
+        and z.get("zoneNumber") is not None
+        and isinstance(z.get("secsInZone"), (int, float))
+    }
+
+
 def now() -> str:
     # Written without the offset, the way every stamp before it was: the
     # column is text and `max(fetched_at)` compares it as text, so one row
@@ -956,7 +974,9 @@ class Fetcher:
         One extra request per activity, so a cap keeps the first run over
         months of history from doubling the whole fetch; the schedule's
         three runs a day drain that backlog within days, and from then on
-        a run only ever sees the week's handful of new activities.
+        a run only ever sees the week's handful of new activities. Missing
+        means null: an activity Garmin has no zones for anywhere is stored
+        as {} by fetch_hr_zones, so it is asked once and not on every run.
         """
         rows = self.conn.execute(
             "SELECT id, date FROM activities WHERE hr_zones_json IS NULL "
@@ -975,29 +995,58 @@ class Fetcher:
         payload = self.call(
             act_date, f"hr_zones_{act_id}", self.api.get_activity_hr_in_timezones, act_id
         )
-        if not payload:
+        if payload is None:
             return
-        # The column promises "seconds per HR zone" and gets exactly that:
-        # {"1": 62.0, ..., "5": 118.0}. Garmin sends zone boundaries too,
-        # but those follow the athlete's current zone setup, so storing
-        # them next to historic seconds would fake a precision the data
-        # does not have.
-        # Only numeric seconds make it in: if Garmin ever renames the
-        # field, the dict stays empty, the column stays null and the next
-        # run tries again, with the raw payload archived for inspection.
-        zones = {
-            str(z["zoneNumber"]): z["secsInZone"]
-            for z in payload
-            if isinstance(z, dict)
-            and z.get("zoneNumber") is not None
-            and isinstance(z.get("secsInZone"), (int, float))
-        }
+        zones = zone_seconds(payload)
+        if payload and not zones:
+            # Zones in a shape this reading does not know, a renamed
+            # field most likely: the column stays null and the next run
+            # tries again, with the raw payload archived for inspection.
+            return
         if not zones:
-            return
+            # An empty list is not "nothing yet", it is Garmin saying the
+            # zones live elsewhere: a multisport recording keeps them on
+            # its legs, and the parent is the row the mirror lists.
+            zones = self.child_hr_zones(act_date, act_id)
+            if zones is None:
+                return
+        # {} is an answer too, and the one that ends the asking: an
+        # activity Garmin has no zones for anywhere (a manual entry, a
+        # multisport parent without legs) would otherwise be requested
+        # again on every run, forever, at one call each.
         self.upsert("activities", ("id",), {
             "id": act_id,
             "hr_zones_json": json.dumps(zones),
         })
+
+    def child_hr_zones(self, act_date: str, act_id: int) -> dict[str, float] | None:
+        """Seconds per zone summed over a multisport session's legs.
+
+        The activity list only ever shows the parent, and the parent
+        answers hrTimeInZones with an empty list because Garmin keeps the
+        zones on each leg. The activity summary names the legs
+        (metadataDTO.childIds), one more request per leg. None when a
+        request failed, so the parent is left for the next run rather
+        than recorded as zone-less on a bad connection; {} when Garmin
+        really has nothing, which is what stops the asking.
+        """
+        summary = self.call(act_date, f"activity_meta_{act_id}", self.api.get_activity, act_id)
+        if summary is None:
+            return None
+        metadata = summary.get("metadataDTO") if isinstance(summary, dict) else None
+        child_ids = (metadata or {}).get("childIds") or []
+        total: dict[str, float] = {}
+        for child_id in child_ids:
+            if not isinstance(child_id, int):
+                continue
+            payload = self.call(
+                act_date, f"hr_zones_{child_id}", self.api.get_activity_hr_in_timezones, child_id
+            )
+            if payload is None:
+                return None
+            for zone, secs in zone_seconds(payload).items():
+                total[zone] = total.get(zone, 0.0) + secs
+        return total
 
     def backfill_laps(self, cap: int = 10) -> None:
         """Fill activity_laps where an activity has none, newest first.
