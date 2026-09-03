@@ -7,6 +7,7 @@ namespace App\Mcp\Servers;
 use App\Mcp\Prompts\WeeklyReportPrompt;
 use App\Mcp\Tools\DeleteSymptomTool;
 use App\Mcp\Tools\DescribeSchemaTool;
+use App\Mcp\Tools\GetActivityDetailTool;
 use App\Mcp\Tools\GetHealthSummaryTool;
 use App\Mcp\Tools\GetInsightsTool;
 use App\Mcp\Tools\GetMuscleMapTool;
@@ -60,7 +61,10 @@ class GarminHealthServer extends Server
         'separates running from station work, gives pace per running lap and says how far the pace '.
         'drifted from first lap to last. A race that alternates the two is what it was built for (a '.
         'HYROX race or simulation is eight 1 km runs with a station between each), and it reads any '.
-        'lapped session just as well. Use query-health-data-tool (single SELECT) for '.
+        'lapped session just as well. Use get-activity-detail-tool for one session in depth: its '.
+        'heart-rate zones as minutes and shares next to the zone floors of the athlete\'s profile, '.
+        'laps, sets, the heart-rate curve and how it compares with earlier sessions of the same '.
+        'type, so never rebuild zones from hr_zones_json in SQL. Use query-health-data-tool (single SELECT) for '.
         'everything else. When a question falls outside every column, it is often still answerable: '.
         'the raw_payload table holds Garmin\'s untouched answer per day and endpoint as jsonb, so '.
         'reach for it rather than reporting that the mirror does not track something. Write '.
@@ -109,6 +113,7 @@ class GarminHealthServer extends Server
         GetTrainingLoadTool::class,
         GetStrengthProgressTool::class,
         GetRaceSplitsTool::class,
+        GetActivityDetailTool::class,
         QueryHealthDataTool::class,
         RefreshDataTool::class,
         LogSymptomTool::class,

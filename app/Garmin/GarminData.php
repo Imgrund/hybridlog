@@ -170,6 +170,81 @@ class GarminData
             ->get();
     }
 
+    public function activity(int $id): ?object
+    {
+        return $this->db()->table('activities')->where('id', $id)->first();
+    }
+
+    /** The session that started last, or null on a mirror without any. */
+    public function latestActivity(): ?object
+    {
+        return $this->db()->table('activities')->orderByDesc('start_local')->first();
+    }
+
+    /** The newest sessions, for a picker's shortlist. */
+    public function recentActivities(int $limit = 5): Collection
+    {
+        return $this->db()->table('activities')
+            ->orderByDesc('start_local')
+            ->limit($limit)
+            ->get();
+    }
+
+    /**
+     * Earlier sessions of one kind, newest first: the group a session is
+     * compared against. "Kind" is Garmin's own type_key rather than the
+     * name, because the name is whatever the watch or the athlete typed
+     * (three spellings of the same class), while the type is what the
+     * watch was told it recorded.
+     */
+    public function earlierActivitiesOfType(string $typeKey, string $beforeStart, int $limit): Collection
+    {
+        return $this->db()->table('activities')
+            ->where('type_key', $typeKey)
+            ->where('start_local', '<', $beforeStart)
+            ->orderByDesc('start_local')
+            ->limit($limit)
+            ->get();
+    }
+
+    public function activitySets(int $activityId): Collection
+    {
+        return $this->db()->table('strength_sets')
+            ->where('activity_id', $activityId)
+            ->orderBy('set_index')
+            ->get();
+    }
+
+    /**
+     * Heart-rate samples inside one window, oldest first. Both bounds are
+     * 'Y-m-d H:i:s' strings, which is the shape intraday.ts_local has
+     * (fetch.py writes it that way), so the comparison is text against
+     * text of one form.
+     */
+    public function intradayHeartRate(string $from, string $to): Collection
+    {
+        return $this->db()->table('intraday')
+            ->whereBetween('ts_local', [$from, $to])
+            ->whereNotNull('heart_rate')
+            ->orderBy('ts_local')
+            ->get(['ts_local', 'heart_rate']);
+    }
+
+    /**
+     * The heart profile in force on a date: the newest snapshot taken on
+     * or before it. A session older than the oldest snapshot gets that
+     * oldest one, the nearest the mirror can offer, rather than today's,
+     * which has had every zone change since to drift away from it.
+     */
+    public function heartProfileOn(string $date): ?object
+    {
+        return $this->db()->table('heart_profile')
+            ->where('date', '<=', $date)
+            ->orderByDesc('date')
+            ->first()
+            ?? $this->db()->table('heart_profile')->orderBy('date')->first();
+    }
+
     public function fitnessAge(): ?object
     {
         return $this->db()->table('fitness_age')->orderByDesc('date')->first();

@@ -227,7 +227,7 @@
                          weekly report is the one thing this server offers
                          that Mistral has no way to show, and its absence
                          otherwise reads as a broken connection. --}}
-                    <p class="mt-2 text-xs text-muted">{{ __('Mistral does not do prompt templates yet, so the weekly report is missing there. All twelve tools arrive, each with a switch of its own next to the ones here.') }}</p>
+                    <p class="mt-2 text-xs text-muted">{{ __('Mistral does not do prompt templates yet, so the weekly report is missing there. All thirteen tools arrive, each with a switch of its own next to the ones here.') }}</p>
                 </div>
 
                 <div class="client-panel mt-4 text-sm text-secondary leading-relaxed" data-client="lmstudio">

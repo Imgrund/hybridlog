@@ -9,6 +9,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **One session in depth, from one tool.** `get-activity-detail-tool`
+  returns what a chat used to assemble from four or five queries of its
+  own: the heart-rate zones as seconds, minutes and shares next to the
+  zone floors the athlete's profile carried on that date (with the
+  minutes in zones 4 and 5 as one number), the laps, the sets per
+  exercise category, the heart-rate curve in about thirty buckets, and
+  how the session sits against the earlier ones of its kind: medians,
+  the deviation from them, the rank by training load. The usage log
+  showed that reconstruction written in SQL time and again, the zones
+  above all, and a reconstruction that guesses at the zone model is one
+  that quietly disagrees with the dashboard. The tool also tells the
+  three states of a session's zones apart: not fetched yet, none at
+  Garmin, and present.
 - **A query that names a column the mirror does not have now gets the
   full column list of the tables it used.** The three closest names stay,
   but they are guesses ranked by name, and the wanted column often shares
