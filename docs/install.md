@@ -104,7 +104,8 @@ suite a prefix of its own. Nothing else has to set it.
 ### Who starts the fetcher
 
 A fetch is never run inside a request. The refresh button and the MCP
-`refresh-data` tool both dispatch a job, a `queue:work` worker runs the
+`refresh-data` tool both dispatch a job (the button for the last seven
+days, the tool for today and yesterday), a `queue:work` worker runs the
 fetcher, and Laravel's scheduler (`schedule:work`) holds the times from
 `GARMIN_FETCH_TIMES`. Both processes have to be running, otherwise the
 refresh button enqueues a fetch that nothing picks up.

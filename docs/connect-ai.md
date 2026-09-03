@@ -208,7 +208,8 @@ exceptions are captured too. Logging never breaks a call: a failing
 write is swallowed.
 
 ```bash
-php artisan mcp:usage --days=30      # per-tool counts, error rate, median duration
+php artisan mcp:usage --days=30      # per-tool and per-athlete counts, error rate, median duration
+php artisan mcp:usage --athlete=2    # the same report for one athlete (user id) only
 php artisan mcp:usage --calls        # every call with the subject it was after
 php artisan mcp:usage --errors       # the failed calls including arguments
 ```
