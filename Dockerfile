@@ -72,12 +72,23 @@ RUN install-php-extensions pdo_pgsql pcntl opcache
 # Garmin's unofficial web API and has no PHP equivalent. Its virtualenv sits
 # outside /app so that a bind-mounted source tree cannot hide it. curl is
 # for the health check below, nothing else.
+#
+# uv builds that virtualenv and installs into it, pinned to one release so a
+# rebuild months from now resolves the same way this one did. It also makes
+# python3-venv unnecessary: uv creates the environment itself.
+COPY --from=ghcr.io/astral-sh/uv:0.12.12 /uv /usr/local/bin/uv
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends curl python3 python3-venv \
-    && rm -rf /var/lib/apt/lists/* \
-    && python3 -m venv /opt/fetcher
+    && apt-get install -y --no-install-recommends curl python3 \
+    && rm -rf /var/lib/apt/lists/*
 COPY fetcher/requirements.txt /tmp/requirements.txt
-RUN /opt/fetcher/bin/pip install --no-cache-dir -r /tmp/requirements.txt \
+# Seven day release cooldown: anything published in the last week is invisible
+# to the resolver, so a package taken over and republished has to survive a
+# week of public scrutiny before it can reach this image. The flag is passed
+# here rather than through UV_EXCLUDE_NEWER, which has trouble parsing
+# durations.
+RUN uv venv --python /usr/bin/python3 /opt/fetcher \
+    && uv pip install --python /opt/fetcher/bin/python --no-cache \
+       --exclude-newer "7 days" -r /tmp/requirements.txt \
     && rm /tmp/requirements.txt
 
 WORKDIR /app
