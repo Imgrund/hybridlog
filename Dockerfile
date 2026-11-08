@@ -103,7 +103,7 @@ RUN php artisan package:discover --ansi
 RUN mkdir -p storage/framework/cache/data storage/framework/sessions \
              storage/framework/views storage/logs bootstrap/cache \
     && chmod -R ug+rwX storage bootstrap/cache \
-    && chmod +x docker/boot.sh docker/serve.sh docker/work.sh
+    && chmod +x docker/boot.sh docker/ready.sh docker/serve.sh docker/work.sh
 
 # Everything that can be decided before the image ships. Without these the
 # framework compiles every Blade template on the request that first needs
