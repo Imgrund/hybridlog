@@ -34,7 +34,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - **The fetcher asks for `garminconnect` 0.3.20 or newer** (was 0.3.11),
-  along with `psycopg` 3.3.7 and `python-dotenv` 1.2.4. Garmin changes its
+  along with `psycopg` 3.3.6 and `python-dotenv` 1.2.4 (3.3.7 is still
+  inside the seven day release cooldown the image build enforces). Garmin changes its
   web API without notice and that library is where the fix lands, so the
   floor follows it.
 - **The GitHub Actions the workflows pin are on their current releases**
