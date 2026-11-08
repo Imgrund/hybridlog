@@ -7,6 +7,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Security
+
+- **Dependencies brought to their current patch and minor releases, which
+  closes every open advisory.** On the PHP side that is Laravel 13.29 to
+  13.40, Passport 13.7 to 13.10, and the Symfony components beneath them,
+  among them `symfony/http-foundation`, where a crafted `Cache-Control`
+  request header could tie up the server in a regular expression (a
+  denial of service reachable from outside on any public installation).
+  `phpseclib` moves to 4.0.3 (non-constant-time X25519), `league/commonmark`
+  to 2.10.7. On the build side Vite 8.2 to 8.3, Alpine.js 3.17.5, Chart.js
+  4.6.1 and `concurrently` 10.0.6, which takes the vulnerable `shell-quote`,
+  `source-map-js` and `launch-editor` versions out of `node_modules`. None
+  of the npm findings reached the shipped image; they lived in development
+  and build tooling only. `composer audit` and `npm audit` both report
+  nothing. `laravel/mcp` stays on 0.9 and PHPUnit on 12 on purpose: both
+  have a new major line that is a separate change.
+- **The fetcher's Python packages are installed through uv with a seven
+  day release cooldown.** The image used to resolve against whatever was
+  newest on PyPI at build time, so a package taken over and republished
+  one day would have been in the next day's image. A release now has to
+  survive a week of public scrutiny before a build picks it up.
+
+### Changed
+
+- **The fetcher asks for `garminconnect` 0.3.20 or newer** (was 0.3.11),
+  along with `psycopg` 3.3.7 and `python-dotenv` 1.2.4. Garmin changes its
+  web API without notice and that library is where the fix lands, so the
+  floor follows it.
+- **The GitHub Actions the workflows pin are on their current releases**
+  (setup-php 2.40, setup-node 7.1, the Docker build actions 4.4 and 7.4),
+  each still pinned to its commit.
+
 ## [0.1.13] - 2026-09-03
 
 ### Added
