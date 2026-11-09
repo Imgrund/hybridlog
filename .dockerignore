@@ -9,6 +9,7 @@
 .git
 .gitattributes
 .github
+.railway
 .DS_Store
 .idea
 .vscode
