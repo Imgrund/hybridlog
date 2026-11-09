@@ -18,6 +18,13 @@ set -uo pipefail
 
 cd /app
 
+# Checked before either process starts, so that a worker that cannot reach
+# the database says so in its first log line and ends, rather than letting
+# queue:work fail quietly on its first poll. On Railway the same script
+# also runs as the pre-deploy command, where failing keeps the previous
+# container alive; see railway.worker.toml.
+/app/docker/ready.sh || exit 1
+
 # --tries=1 because a fetch that failed on a broken Garmin session fails the
 # same way three times, and each attempt is a few minutes of API calls. The
 # --timeout here does not govern the fetch: RunGarminFetch carries its own

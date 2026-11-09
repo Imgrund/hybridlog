@@ -29,8 +29,15 @@ builder = "DOCKERFILE"
 [deploy]
 startCommand = "/app/docker/work.sh"
 
-# No preDeployCommand: the web service owns that, see railway.toml. No
-# healthcheckPath either, since this service answers no HTTP.
+# Not the migrations, the web service owns those (see railway.toml), only
+# the question whether this container reaches the database at all. Without
+# a healthcheckPath, which a service that answers no HTTP cannot have, a
+# deploy of this service counts as successful the moment work.sh starts,
+# and the previous container is removed right then. A worker that then
+# cannot reach the database restarts until Railway gives up, and by that
+# time the one that could is gone with it. A pre-deploy command that fails
+# ends the deploy first, and the running worker stays.
+preDeployCommand = ["/app/docker/ready.sh"]
 #
 # ALWAYS rather than ON_FAILURE, because both processes also exit cleanly:
 # queue:work on `queue:restart` and when it decides it has run long enough,

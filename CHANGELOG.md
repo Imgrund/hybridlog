@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **A worker that cannot reach the database no longer replaces the one that
+  can.** On Railway the worker service has no healthcheck, so a deploy of it
+  counted as successful the moment its process started and the previous
+  container was removed on the spot; if the new one then failed on the
+  database (wrong credentials, database still starting) it restarted until
+  the platform gave up, and the scheduled fetches were gone with the old
+  container. The worker now runs `docker/ready.sh` as its pre-deploy
+  command, which waits for a reachable database with the migrations in
+  place and otherwise fails the deploy while the running worker stays.
+  `docker/work.sh` runs the same check first on every platform, so a worker
+  without a database says so in its first log line instead of failing on
+  its first poll.
+
 ## [0.1.14] - 2026-11-08
 
 ### Security
