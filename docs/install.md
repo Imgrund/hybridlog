@@ -119,9 +119,10 @@ is killed, and the queue worker's own `--timeout` has to stay above it.
 `Dockerfile` builds one image, started two ways: `docker/serve.sh` for the
 dashboard, `docker/work.sh` for the queue worker and the scheduler, which
 share a container because neither is busy and a container costs money.
-Two worked examples carry the same pair: `railway.toml` plus
-`railway.worker.toml` with a file per service, `fly.toml` with two process
-groups in one. Any platform that builds a Dockerfile works the same way,
+Two worked examples carry the same pair: `.railway/railway.ts`, which
+`railway config apply` writes onto the two Railway services of whichever
+project the CLI is linked to, and `fly.toml` with two process groups in
+one. Any platform that builds a Dockerfile works the same way,
 and one that would rather deploy a finished image than build one can be
 pointed at `ghcr.io/imgrund/hybridlog` instead; the two entrypoints and
 everything below are the same either way.

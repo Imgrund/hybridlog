@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **The Railway deployment is described in `.railway/railway.ts` instead of
+  the two TOML files.** Railway stops reading `railway.toml` and
+  `railway.worker.toml` on 2026-12-01; without the switch both services
+  would have fallen back to a default builder with no start command,
+  healthcheck or pre-deploy step. The new file carries the same settings
+  for the web and the worker service and is applied with
+  `railway config apply` against the linked project, where the service
+  names follow the project. The `railway` package joins the dev
+  dependencies because the CLI evaluates the file through it.
+
 ## [0.1.16] - 2026-11-09
 
 ### Changed
