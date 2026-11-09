@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.16] - 2026-11-09
+
 ### Changed
 
 - **The MCP server moved to `laravel/mcp` 1.1.** The hosted endpoint now
@@ -512,7 +514,8 @@ history that led to it.
 - English interface with a German translation, following the browser language
   unless the profile says otherwise.
 
-[Unreleased]: https://github.com/Imgrund/hybridlog/compare/v0.1.15...HEAD
+[Unreleased]: https://github.com/Imgrund/hybridlog/compare/v0.1.16...HEAD
+[0.1.16]: https://github.com/Imgrund/hybridlog/compare/v0.1.15...v0.1.16
 [0.1.15]: https://github.com/Imgrund/hybridlog/compare/v0.1.14...v0.1.15
 [0.1.14]: https://github.com/Imgrund/hybridlog/compare/v0.1.13...v0.1.14
 [0.1.13]: https://github.com/Imgrund/hybridlog/compare/v0.1.12...v0.1.13
