@@ -85,7 +85,6 @@ abstract class LoggedTool extends Tool
                 'arguments' => $this->arguments($request),
                 'transport' => app()->runningInConsole() ? 'stdio' : 'web',
                 'client' => $this->client($request),
-                'session_id' => $request->sessionId(),
                 'duration_ms' => (int) round((hrtime(true) - $startedAt) / 1_000_000),
                 'ok' => $ok,
                 'error' => $error === null ? null : mb_substr($error, 0, 1000),

@@ -17,6 +17,6 @@
     "dependencies": {
         "alpinejs": "^3.17.5",
         "chart.js": "^4.6.1",
-        "three": "^0.185.1"
+        "three": "^0.187.0"
     }
 }

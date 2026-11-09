@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **The MCP server moved to `laravel/mcp` 1.1.** The hosted endpoint now
+  speaks MCP revision 2026-07-28 and still answers clients that open with
+  the classic `initialize` handshake (2025-03-26 through 2025-11-25), so
+  existing claude.ai connectors keep working without a reconnect. The
+  release drops per-request session ids, so the tool-call telemetry no
+  longer records one; the column stays for the rows already written.
+  Dynamic client registration is now registered by this application alone,
+  behind the existing throttle and demo guard, under the route name the
+  discovery document looks for.
+- **The 3D body map renders with three.js 0.187.** Nothing in the scene
+  changed; the bump only follows the library's current release.
+
 ## [0.1.15] - 2026-11-09
 
 ### Fixed
