@@ -22,21 +22,24 @@ use Laravel\Mcp\Server\Http\Controllers\OAuthRegisterController;
 
 Mcp::local('garmin', GarminHealthServer::class);
 
-// OAuth 2.1 discovery (.well-known/*) + dynamic client registration (POST /oauth/register).
-Mcp::oauthRoutes();
+// OAuth 2.1 discovery (.well-known/*). Dynamic client registration is
+// registered below rather than by the package: the package's own route has
+// no middleware, and registration is unauthenticated by spec (RFC 7591), so
+// on a publicly reachable host it is an unbounded write path into
+// oauth_clients. Here the same controller sits behind a throttle; a
+// connector setup needs one call, not dozens. The route keeps the package's
+// name because the discovery document advertises registration_endpoint only
+// while a route by that name exists.
+Mcp::oauthRoutes(registration: false);
 
-// The package registers /oauth/register without middleware. Dynamic client
-// registration is unauthenticated by spec (RFC 7591), but on a publicly reachable
-// host that is an unbounded write path into oauth_clients, so re-register the same
-// controller behind a throttle. A connector setup needs one call, not dozens.
-//
-// And shut entirely on a public demo: registration is what turns a stranger's
+// Registration is shut entirely on a public demo: registration is what turns a stranger's
 // chat client into a client of this installation, and the token it would then
 // be granted is a token to an account everybody shares. The other half of the
 // flow, /oauth/authorize and /oauth/token, is Passport's own registration and
 // gets the same guard from AppServiceProvider.
 Route::post('/oauth/register', OAuthRegisterController::class)
-    ->middleware(['throttle:oauth-register', 'not-demo']);
+    ->middleware(['throttle:oauth-register', 'not-demo'])
+    ->name('mcp.oauth.register');
 
 // The endpoint itself is closed on a demo too. Nothing can reach it there
 // anyway once no client can register, but a token minted before the switch
