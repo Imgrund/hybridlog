@@ -33,6 +33,15 @@ return [
     | actually sent before editing this line, because guessing at the
     | other host is how it stays broken.
     |
+    | Grok's custom connectors come back to grok.com, under
+    | /connectors-oauth-exchange-code/ on the web and under other paths
+    | elsewhere, so the host is pinned rather than one path. xAI documents
+    | none of them; they come from the registrations Grok sends.
+    |
+    | A refused registration is logged with the hosts it asked for (see
+    | LogRefusedRedirect), so the next unknown client names its callback
+    | host in the logs instead of leaving it to be guessed.
+    |
     | Mistral's connector debugger is a third host again: it comes back to
     | the console it runs in, under
     | console.mistral.ai/build/connectors/debugger/oauth-callback. Le Chat
@@ -55,6 +64,7 @@ return [
         'https://app.langdock.com',
         'https://callback.mistral.ai',
         'https://console.mistral.ai',
+        'https://grok.com',
         'http://localhost',
     ],
 

@@ -38,7 +38,7 @@ Mcp::oauthRoutes(registration: false);
 // flow, /oauth/authorize and /oauth/token, is Passport's own registration and
 // gets the same guard from AppServiceProvider.
 Route::post('/oauth/register', OAuthRegisterController::class)
-    ->middleware(['throttle:oauth-register', 'not-demo'])
+    ->middleware(['throttle:oauth-register', 'not-demo', 'log-refused-redirect'])
     ->name('mcp.oauth.register');
 
 // The endpoint itself is closed on a demo too. Nothing can reach it there

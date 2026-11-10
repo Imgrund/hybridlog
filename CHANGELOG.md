@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **Grok can connect as a custom connector.** Its registration was refused
+  with "not a permitted redirect domain" because grok.com, where Grok
+  receives the authorization code, was missing from the redirect
+  allowlist.
+
+### Added
+
+- **A refused client registration logs the callback host it asked for.**
+  Only scheme and host are written, never the path or query, so the next
+  chat client that is not on the allowlist names the host it needs in the
+  logs.
+
 ## [0.1.17] - 2026-11-09
 
 ### Changed
