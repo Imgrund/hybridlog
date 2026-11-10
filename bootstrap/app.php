@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Middleware\EnsureNotDemo;
+use App\Http\Middleware\LogRefusedRedirect;
 use App\Http\Middleware\SetLocale;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -22,6 +23,7 @@ return Application::configure(basePath: dirname(__DIR__))
             // public demo keeps shut is a list worth reading in the route
             // file. See config/demo.php.
             'not-demo' => EnsureNotDemo::class,
+            'log-refused-redirect' => LogRefusedRedirect::class,
         ]);
         $middleware->redirectGuestsTo('/login');
 

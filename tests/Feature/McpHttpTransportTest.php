@@ -7,6 +7,7 @@ namespace Tests\Feature;
 use App\Mcp\Servers\GarminHealthServer;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Testing\TestResponse;
 use Laravel\Passport\Passport;
@@ -198,5 +199,37 @@ class McpHttpTransportTest extends TestCase
             'client_name' => 'Not Mistral',
             'redirect_uris' => ['https://chat.mistral.ai/mcp/callback'],
         ])->assertStatus(400)->assertJsonPath('error', 'invalid_redirect_uri');
+    }
+
+    public function test_grok_can_register_its_connector_callback(): void
+    {
+        // Grok's custom connectors deliver the code to grok.com. Its web
+        // client sends this path; the host is pinned, not the path.
+        $this->postJson('/oauth/register', [
+            'client_name' => 'Grok',
+            'redirect_uris' => ['https://grok.com/connectors-oauth-exchange-code/'],
+        ])->assertStatus(201);
+
+        $this->postJson('/oauth/register', [
+            'client_name' => 'Not Grok',
+            'redirect_uris' => ['https://grok.com.evil.example/callback'],
+        ])->assertStatus(400)->assertJsonPath('error', 'invalid_redirect_uri');
+    }
+
+    public function test_a_refused_registration_logs_the_host_but_not_the_path(): void
+    {
+        // The only way to learn which host a new client needs. The path
+        // and query stay out of the log: they can carry ids and state.
+        Log::spy();
+
+        $this->postJson('/oauth/register', [
+            'client_name' => 'Unknown Client',
+            'redirect_uris' => ['https://new-client.example/oauth/cb?state=secret'],
+        ])->assertStatus(400);
+
+        Log::shouldHaveReceived('warning')->once()->withArgs(fn (string $message, array $context): bool => $context === [
+            'client_name' => 'Unknown Client',
+            'redirect_hosts' => ['https://new-client.example'],
+        ]);
     }
 }
