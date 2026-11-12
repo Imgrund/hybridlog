@@ -23,7 +23,9 @@ class McpUsageCommandTest extends TestCase
 
     public function test_the_report_names_each_athlete_with_their_calls(): void
     {
-        $owner = $this->athlete();
+        // Fixed names: the two-column row strips trailing punctuation, so a
+        // generated name ending in "Sr." would not come back verbatim.
+        $owner = User::factory()->admin()->create(['name' => 'First Athlete']);
         $guest = User::factory()->create(['name' => 'Second Athlete']);
 
         $this->record($owner, 'get-health-summary-tool');
@@ -32,7 +34,7 @@ class McpUsageCommandTest extends TestCase
 
         $this->artisan('mcp:usage')
             ->expectsOutputToContain('Per athlete')
-            ->expectsOutputToContain(sprintf('#%d %s', $owner->id, $owner->name))
+            ->expectsOutputToContain(sprintf('#%d First Athlete', $owner->id))
             ->expectsOutputToContain(sprintf('#%d Second Athlete', $guest->id))
             ->expectsOutputToContain('mostly query-health-data-tool')
             ->assertSuccessful();
