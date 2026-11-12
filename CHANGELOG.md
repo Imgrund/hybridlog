@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.19] - 2026-11-12
+
 ### Changed
 
 - **Vite 8.3.6 builds the assets and the fetcher asks for psycopg 3.3.8.**
@@ -550,7 +552,8 @@ history that led to it.
 - English interface with a German translation, following the browser language
   unless the profile says otherwise.
 
-[Unreleased]: https://github.com/Imgrund/hybridlog/compare/v0.1.18...HEAD
+[Unreleased]: https://github.com/Imgrund/hybridlog/compare/v0.1.19...HEAD
+[0.1.19]: https://github.com/Imgrund/hybridlog/compare/v0.1.18...v0.1.19
 [0.1.18]: https://github.com/Imgrund/hybridlog/compare/v0.1.17...v0.1.18
 [0.1.17]: https://github.com/Imgrund/hybridlog/compare/v0.1.16...v0.1.17
 [0.1.16]: https://github.com/Imgrund/hybridlog/compare/v0.1.15...v0.1.16
