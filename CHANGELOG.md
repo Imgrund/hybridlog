@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **Vite 8.3.6 builds the assets and the fetcher asks for psycopg 3.3.8.**
+  Both are the current patch releases that have cleared the seven day
+  release cooldown; neither changes what the application does.
+
 ## [0.1.18] - 2026-11-10
 
 ### Fixed
